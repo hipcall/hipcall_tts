@@ -1,6 +1,7 @@
 defmodule HipcallTts.Application do
   use Application
 
+  @spec start(:normal | :takeover | :failover, any()) :: {:ok, pid()} | {:error, any()}
   def start(_type, _args) do
     children = [
       {Finch,

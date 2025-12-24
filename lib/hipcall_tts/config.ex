@@ -55,6 +55,7 @@ defmodule HipcallTts.Config do
       config = HipcallTts.Config.get_provider_config(:nonexistent)
       # => []
   """
+  @spec get_provider_config(atom(), keyword()) :: keyword()
   def get_provider_config(provider, opts \\ []) do
     app_config = Application.get_env(:hipcall_tts, :providers, [])
     provider_config = Keyword.get(app_config, provider, [])
@@ -97,6 +98,7 @@ defmodule HipcallTts.Config do
       ]
       resolved = HipcallTts.Config.resolve_system_vars(config)
   """
+  @spec resolve_system_vars(keyword() | map() | any()) :: keyword() | map() | any()
   def resolve_system_vars(config) when is_list(config) do
     Enum.map(config, fn
       {key, {:system, env_var}} ->

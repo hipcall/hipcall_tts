@@ -59,7 +59,7 @@ defmodule HipcallTts.SchemaTest do
     end
 
     test "valid params with valid format options" do
-      formats = ["mp3", "wav"]
+      formats = ["mp3", "wav", "ogg_vorbis", "pcm"]
 
       for format <- formats do
         opts = [provider: :openai, text: "Test", format: format]
@@ -67,6 +67,21 @@ defmodule HipcallTts.SchemaTest do
         assert {:ok, validated} = NimbleOptions.validate(opts, Schema.generate_schema())
         assert Keyword.get(validated, :format) == format
       end
+    end
+
+    test "provider_opts is accepted and defaults to []" do
+      assert {:ok, validated} =
+               NimbleOptions.validate([provider: :openai, text: "Hi"], Schema.generate_schema())
+
+      assert Keyword.get(validated, :provider_opts) == []
+
+      assert {:ok, validated} =
+               NimbleOptions.validate(
+                 [provider: :openai, text: "Hi", provider_opts: [api_key: "x"]],
+                 Schema.generate_schema()
+               )
+
+      assert Keyword.get(validated, :provider_opts) == [api_key: "x"]
     end
   end
 
@@ -190,7 +205,7 @@ defmodule HipcallTts.SchemaTest do
       assert Keyword.get(retry_opts, :backoff_factor) == 2.0
     end
 
-    test "invalid max_attempts in retry_opts fails" do
+    test "max_attempts: 0 is allowed (disables retries)" do
       opts = [
         provider: :openai,
         text: "Hello",
@@ -199,9 +214,9 @@ defmodule HipcallTts.SchemaTest do
         ]
       ]
 
-      assert {:error, error} = NimbleOptions.validate(opts, Schema.generate_schema())
-      assert %NimbleOptions.ValidationError{} = error
-      assert error.message =~ "invalid value for :max_attempts option"
+      assert {:ok, validated} = NimbleOptions.validate(opts, Schema.generate_schema())
+      retry_opts = Keyword.get(validated, :retry_opts)
+      assert Keyword.get(retry_opts, :max_attempts) == 0
     end
 
     test "negative max_attempts in retry_opts fails" do
@@ -319,6 +334,12 @@ defmodule HipcallTts.SchemaTest do
 
       assert {:error, error} = NimbleOptions.validate(opts, Schema.generate_schema())
       assert %NimbleOptions.ValidationError{} = error
+    end
+
+    test "validate_positive_float/1 accepts positive float and rejects others" do
+      assert {:ok, 1.0} = Schema.validate_positive_float(1.0)
+      assert {:error, _} = Schema.validate_positive_float(-1.0)
+      assert {:error, _} = Schema.validate_positive_float(1)
     end
   end
 

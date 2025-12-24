@@ -49,6 +49,7 @@ defmodule HipcallTts.Registry do
       HipcallTts.Registry.providers()
       # => [:openai, :elevenlabs, :polly]
   """
+  @spec providers() :: [atom()]
   def providers, do: Keyword.keys(@providers)
 
   @doc """
@@ -71,10 +72,20 @@ defmodule HipcallTts.Registry do
       {:error, message} = HipcallTts.Registry.get_provider(:invalid)
       # => {:error, "Unknown provider: invalid"}
   """
+  @spec get_provider(atom()) :: {:ok, module()} | {:error, String.t()}
   def get_provider(name) do
-    case Keyword.fetch(@providers, name) do
-      {:ok, module} -> {:ok, module}
-      :error -> {:error, "Unknown provider: #{name}"}
+    # Allow overriding provider modules (useful for testing and custom deployments).
+    overrides = Application.get_env(:hipcall_tts, :provider_modules, [])
+
+    case Keyword.fetch(overrides, name) do
+      {:ok, module} ->
+        {:ok, module}
+
+      :error ->
+        case Keyword.fetch(@providers, name) do
+          {:ok, module} -> {:ok, module}
+          :error -> {:error, "Unknown provider: #{name}"}
+        end
     end
   end
 
@@ -100,6 +111,7 @@ defmodule HipcallTts.Registry do
       {:error, message} = HipcallTts.Registry.models(:invalid)
       # => {:error, "Unknown provider: invalid"}
   """
+  @spec models(atom()) :: {:ok, list()} | {:error, String.t()}
   def models(provider) do
     case get_provider(provider) do
       {:ok, module} -> {:ok, module.models()}
@@ -129,6 +141,7 @@ defmodule HipcallTts.Registry do
       {:error, message} = HipcallTts.Registry.voices(:invalid)
       # => {:error, "Unknown provider: invalid"}
   """
+  @spec voices(atom()) :: {:ok, list()} | {:error, String.t()}
   def voices(provider) do
     case get_provider(provider) do
       {:ok, module} -> {:ok, module.voices()}
@@ -158,6 +171,7 @@ defmodule HipcallTts.Registry do
       {:error, message} = HipcallTts.Registry.languages(:invalid)
       # => {:error, "Unknown provider: invalid"}
   """
+  @spec languages(atom()) :: {:ok, list()} | {:error, String.t()}
   def languages(provider) do
     case get_provider(provider) do
       {:ok, module} -> {:ok, module.languages()}
@@ -187,6 +201,7 @@ defmodule HipcallTts.Registry do
       {:error, message} = HipcallTts.Registry.capabilities(:invalid)
       # => {:error, "Unknown provider: invalid"}
   """
+  @spec capabilities(atom()) :: {:ok, map()} | {:error, String.t()}
   def capabilities(provider) do
     case get_provider(provider) do
       {:ok, module} -> {:ok, module.capabilities()}

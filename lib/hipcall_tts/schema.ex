@@ -98,6 +98,72 @@ defmodule HipcallTts.Schema do
         The text should be non-empty and within the provider's maximum length limits.
         """
       ],
+      api_key: [
+        type: :string,
+        required: false,
+        doc: """
+        Provider API key override for this request.
+
+        If omitted, the provider will read its configured key from application env
+        (for example `OPENAI_API_KEY` for OpenAI).
+        """
+      ],
+      api_organization: [
+        type: :string,
+        required: false,
+        doc: """
+        Provider organization/account identifier override for this request (provider-specific).
+
+        Example (OpenAI): `"org_..."` for the `OpenAI-Organization` header.
+        """
+      ],
+      access_key_id: [
+        type: :string,
+        required: false,
+        doc: """
+        AWS Access Key ID override for this request (Polly).
+
+        If omitted, reads from application env config (e.g. `AWS_ACCESS_KEY_ID`).
+        """
+      ],
+      secret_access_key: [
+        type: :string,
+        required: false,
+        doc: """
+        AWS Secret Access Key override for this request (Polly).
+
+        If omitted, reads from application env config (e.g. `AWS_SECRET_ACCESS_KEY`).
+        """
+      ],
+      session_token: [
+        type: :string,
+        required: false,
+        doc: """
+        AWS Session Token override for this request (Polly), for temporary credentials.
+        """
+      ],
+      region: [
+        type: :string,
+        required: false,
+        doc: """
+        AWS region override for this request (Polly), e.g. `"us-east-1"`.
+        """
+      ],
+      provider_opts: [
+        type: :keyword_list,
+        required: false,
+        default: [],
+        doc: """
+        Provider-specific options (recommended going forward).
+
+        This is a flexible escape-hatch to avoid growing the top-level schema forever.
+        Options placed here are merged into the provider params before calling the provider.
+
+        Example:
+
+            provider_opts: [api_key: "sk-...", region: "us-east-1"]
+        """
+      ],
       voice: [
         type: :string,
         required: false,
@@ -121,13 +187,13 @@ defmodule HipcallTts.Schema do
         """
       ],
       format: [
-        type: {:in, ["mp3", "wav"]},
+        type: {:in, ["mp3", "wav", "ogg_vorbis", "pcm", "opus", "aac", "flac"]},
         required: false,
         default: "mp3",
         doc: """
         Audio format for the generated speech.
 
-        Supported formats: "mp3", "wav"
+        Supported formats: "mp3", "wav", "ogg_vorbis", "pcm", "opus", "aac", "flac"
         Default: "mp3"
         """
       ],
@@ -232,14 +298,16 @@ defmodule HipcallTts.Schema do
   def retry_opts_schema do
     [
       max_attempts: [
-        type: :pos_integer,
+        type: :non_neg_integer,
         required: false,
         default: 3,
         doc: """
         Maximum number of retry attempts.
 
-        Must be a positive integer. The total number of attempts will be
-        max_attempts + 1 (initial attempt + retries).
+        Must be a non-negative integer.
+
+        - `0` means "no retries" (only the initial attempt).
+        - Total number of attempts will be `max_attempts + 1` (initial attempt + retries).
         Default: 3
         """
       ],

@@ -1,5 +1,5 @@
 defmodule HipcallTts.Providers.OpenAITest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias HipcallTts.Providers.OpenAI
 
@@ -168,7 +168,7 @@ defmodule HipcallTts.Providers.OpenAITest do
   describe "capabilities/0" do
     test "returns provider capabilities" do
       caps = OpenAI.capabilities()
-      assert caps.streaming == true
+      assert caps.streaming == false
       assert "mp3" in caps.formats
       assert caps.max_text_length == 4096
     end

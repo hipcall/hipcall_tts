@@ -10,3 +10,9 @@ erl_crash.dump
 .elixir_ls/
 .env
 c
+
+# generated audio artifacts
+*.mp3
+*.wav
+*.ogg
+*.pcm
