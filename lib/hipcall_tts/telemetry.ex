@@ -12,6 +12,7 @@ defmodule HipcallTts.Telemetry do
 
   - `[:hipcall_tts, :generate, :start]` - Emitted when TTS generation starts
   - `[:hipcall_tts, :generate, :stop]` - Emitted when TTS generation completes
+  - `[:hipcall_tts, :generate, :error]` - Emitted when TTS generation returns an error tuple
   - `[:hipcall_tts, :generate, :exception]` - Emitted when TTS generation fails with an exception
   - `[:hipcall_tts, :http, :request]` - Emitted for HTTP requests to provider APIs
   - `[:hipcall_tts, :retry, :attempt]` - Emitted when a retry attempt is made
@@ -114,10 +115,13 @@ defmodule HipcallTts.Telemetry do
   # Event names as module attributes
   @generate_start_event [:hipcall_tts, :generate, :start]
   @generate_stop_event [:hipcall_tts, :generate, :stop]
+  @generate_error_event [:hipcall_tts, :generate, :error]
   @generate_exception_event [:hipcall_tts, :generate, :exception]
   @http_request_event [:hipcall_tts, :http, :request]
   @retry_attempt_event [:hipcall_tts, :retry, :attempt]
   @text_split_event [:hipcall_tts, :text, :split]
+
+  @type metadata :: keyword() | map()
 
   @doc """
   Emits a `[:hipcall_tts, :generate, :start]` event.
@@ -136,6 +140,7 @@ defmodule HipcallTts.Telemetry do
 
       HipcallTts.Telemetry.generate_start(provider: :openai, text_length: 100, voice: "alloy")
   """
+  @spec generate_start(metadata()) :: :ok
   def generate_start(metadata \\ []) do
     measurements = %{system_time: System.system_time()}
     :telemetry.execute(@generate_start_event, measurements, normalize_metadata(metadata))
@@ -164,9 +169,33 @@ defmodule HipcallTts.Telemetry do
       duration = System.monotonic_time() - start_time
       HipcallTts.Telemetry.generate_stop(duration, provider: :openai, text_length: 100)
   """
+  @spec generate_stop(integer(), metadata()) :: :ok
   def generate_stop(duration, metadata \\ []) do
     measurements = %{duration: duration}
     :telemetry.execute(@generate_stop_event, measurements, normalize_metadata(metadata))
+  end
+
+  @doc """
+  Emits a `[:hipcall_tts, :generate, :error]` event.
+
+  This event is emitted when `HipcallTts.generate/1` returns `{:error, error}` (non-exception).
+
+  ## Parameters
+
+  - `duration` - Duration in native time units (from `System.monotonic_time()`)
+  - `error` - The error term returned
+  - `metadata` - Additional metadata (provider, text_length, etc.)
+  """
+  @spec generate_error(integer(), any(), metadata()) :: :ok
+  def generate_error(duration, error, metadata \\ []) do
+    measurements = %{duration: duration}
+
+    metadata =
+      metadata
+      |> normalize_metadata()
+      |> Map.put(:error, error)
+
+    :telemetry.execute(@generate_error_event, measurements, metadata)
   end
 
   @doc """
@@ -198,6 +227,7 @@ defmodule HipcallTts.Telemetry do
           reraise error, __STACKTRACE__
       end
   """
+  @spec generate_exception(:error | :exit | :throw, any(), list(), metadata()) :: :ok
   def generate_exception(kind, error, stacktrace, metadata \\ []) do
     measurements = %{system_time: System.system_time()}
 
@@ -238,6 +268,7 @@ defmodule HipcallTts.Telemetry do
         url: "https://api.openai.com/v1/audio/speech"
       )
   """
+  @spec http_request(integer(), integer(), metadata()) :: :ok
   def http_request(duration, status_code, metadata \\ []) do
     measurements = %{
       duration: duration,
@@ -270,6 +301,7 @@ defmodule HipcallTts.Telemetry do
         max_attempts: 3
       )
   """
+  @spec retry_attempt(pos_integer(), metadata()) :: :ok
   def retry_attempt(attempt, metadata \\ []) do
     measurements = %{system_time: System.system_time()}
 
@@ -304,6 +336,7 @@ defmodule HipcallTts.Telemetry do
         chunk_size: 5000
       )
   """
+  @spec text_split(non_neg_integer(), metadata()) :: :ok
   def text_split(chunks, metadata \\ []) do
     measurements = %{
       chunks: chunks,

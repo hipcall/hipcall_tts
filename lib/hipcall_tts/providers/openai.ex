@@ -1,6 +1,15 @@
 defmodule HipcallTts.Providers.OpenAI do
   @behaviour HipcallTts.Provider
 
+  @moduledoc """
+  OpenAI Text-to-Speech provider.
+
+  Implements `HipcallTts.Provider` using the OpenAI Audio Speech endpoint.
+
+  Note: OpenAI supports streaming, but `stream/1` is not implemented yet in this package,
+  so `capabilities().streaming` is currently `false`.
+  """
+
   alias HipcallTts.Config
   alias HipcallTts.Telemetry
 
@@ -45,13 +54,15 @@ defmodule HipcallTts.Providers.OpenAI do
   ]
 
   @capabilities %{
-    streaming: true,
+    # OpenAI supports streaming, but `stream/1` is not implemented yet in this package.
+    streaming: false,
     formats: ["mp3", "opus", "aac", "flac"],
     sample_rates: [22050, 44100],
     max_text_length: 4096
   }
 
   @impl HipcallTts.Provider
+  @spec generate(HipcallTts.Provider.params()) :: {:ok, binary()} | {:error, any()}
   def generate(params) do
     with :ok <- validate_params(params),
          {:ok, config} <- build_config(params),
@@ -62,11 +73,13 @@ defmodule HipcallTts.Providers.OpenAI do
   end
 
   @impl HipcallTts.Provider
+  @spec stream(HipcallTts.Provider.params()) :: {:ok, Enumerable.t()} | {:error, any()}
   def stream(_params) do
     {:error, "Streaming not yet implemented"}
   end
 
   @impl HipcallTts.Provider
+  @spec validate_params(HipcallTts.Provider.params()) :: :ok | {:error, String.t()}
   def validate_params(params) do
     params = normalize_params(params)
 
@@ -89,15 +102,19 @@ defmodule HipcallTts.Providers.OpenAI do
   end
 
   @impl HipcallTts.Provider
+  @spec models() :: [HipcallTts.Provider.model()]
   def models, do: @models
 
   @impl HipcallTts.Provider
+  @spec voices() :: [HipcallTts.Provider.voice()]
   def voices, do: @voices
 
   @impl HipcallTts.Provider
+  @spec languages() :: [HipcallTts.Provider.language()]
   def languages, do: @languages
 
   @impl HipcallTts.Provider
+  @spec capabilities() :: HipcallTts.Provider.capabilities()
   def capabilities, do: @capabilities
 
   # Private helpers
