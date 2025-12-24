@@ -175,3 +175,13 @@ Run tests:
 mix test
 ```
 
+## Hipcall
+
+All [Hipcall](https://www.hipcall.com/en-gb/) libraries:
+
+- [HipcallDisposableEmail](https://hex.pm/packages/hipcall_disposable_email) - Simple library checking the email's domain is disposable or not.
+- [HipcallDeepgram](https://hex.pm/packages/hipcall_deepgram) - Unofficial Deepgram API Wrapper written in Elixir.
+- [HipcallOpenai](https://hex.pm/packages/hipcall_openai) - Unofficial OpenAI API Wrapper written in Elixir.
+- [HipcallWhichtech](https://hex.pm/packages/hipcall_whichtech) - Find out what the website is built with.
+- [HipcallSms](https://hex.pm/packages/hipcall_sms) - SMS SDK for different providers.
+- [HipcallSdk](https://hex.pm/packages/hipcall_sdk) - Official Hipcall API Wrapper written in Elixir.
