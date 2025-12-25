@@ -177,7 +177,7 @@ mix test
 
 ## Hipcall
 
-All [Hipcall](https://www.hipcall.com/en-gb/) libraries:
+All [Hipcall](https://www.hipcall.com/en/) libraries:
 
 - [HipcallDisposableEmail](https://hex.pm/packages/hipcall_disposable_email) - Simple library checking the email's domain is disposable or not.
 - [HipcallDeepgram](https://hex.pm/packages/hipcall_deepgram) - Unofficial Deepgram API Wrapper written in Elixir.
