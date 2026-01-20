@@ -80,7 +80,14 @@ defmodule HipcallTts do
     with {:ok, validated} <- validate_params(params),
          provider <- Keyword.fetch!(validated, :provider),
          {:ok, provider_module} <- Registry.get_provider(provider) do
-      provider_module.stream(provider_params(validated))
+      case provider_module.stream(provider_params(validated)) do
+        {:ok, result} -> {:ok, result}
+        {:error, error} -> {:error, normalize_error(error, provider)}
+      end
+    else
+      {:error, error} ->
+        provider = safe_provider(params)
+        {:error, normalize_error(error, provider)}
     end
   end
 

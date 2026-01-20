@@ -152,11 +152,17 @@ defmodule HipcallTts.Providers.OpenAI do
   defp build_request_body(params) do
     params = normalize_params(params)
 
+    # Get defaults from config
+    provider_config = Config.get_provider_config(:openai, [])
+    default_model = Keyword.get(provider_config, :default_model, "tts-1")
+    default_voice = Keyword.get(provider_config, :default_voice, "nova")
+    default_format = Keyword.get(provider_config, :default_format, "mp3")
+
     body = %{
-      model: params[:model] || "tts-1",
+      model: params[:model] || default_model,
       input: params[:text],
-      voice: params[:voice] || "nova",
-      response_format: params[:format] || "mp3"
+      voice: params[:voice] || default_voice,
+      response_format: params[:format] || default_format
     }
 
     body =

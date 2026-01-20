@@ -167,17 +167,24 @@ defmodule HipcallTts.Providers.Polly do
 
   defp build_request_body(params) do
     text = params[:text]
-    voice = params[:voice] || "Joanna"
+
+    # Get defaults from config
+    provider_config = Config.get_provider_config(:polly, [])
+    default_voice = Keyword.get(provider_config, :default_voice, "Joanna")
+    default_model = Keyword.get(provider_config, :default_model, "standard")
+    default_format = Keyword.get(provider_config, :default_format, "mp3")
+
+    voice = params[:voice] || default_voice
 
     engine =
       case params[:model] do
-        nil -> "standard"
+        nil -> default_model
         "standard" -> "standard"
         "neural" -> "neural"
         other -> other
       end
 
-    output_format = params[:format] || "mp3"
+    output_format = params[:format] || default_format
 
     text_type =
       if is_binary(text) and String.contains?(text, "<speak>") do

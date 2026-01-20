@@ -6,7 +6,7 @@ Currently supported providers:
 
 - OpenAI (`:openai`)
 - Amazon Polly (`:polly`)
-- Elevenlabs (Not implemented yet)
+- ElevenLabs (`:elevenlabs`)
 
 ## Installation
 
@@ -71,6 +71,30 @@ Generate speech:
 File.write!("polly.mp3", audio)
 ```
 
+### ElevenLabs
+
+Set your API key:
+
+```bash
+export ELEVENLABS_API_KEY="..."
+```
+
+Generate speech:
+
+```elixir
+{:ok, audio} =
+  HipcallTts.generate(
+    provider: :elevenlabs,
+    text: "Hello from ElevenLabs",
+    voice: "Xb7hH8MSUJpSbSDYk0k2",
+    model: "eleven_multilingual_v2",
+    format: "mp3",
+    sample_rate: 44100
+  )
+
+File.write!("elevenlabs.mp3", audio)
+```
+
 ## Configuration
 
 Configure providers in `config/config.exs`:
@@ -81,6 +105,9 @@ import Config
 config :hipcall_tts, :providers,
   openai: [
     api_key: {:system, "OPENAI_API_KEY"}
+  ],
+  elevenlabs: [
+    api_key: {:system, "ELEVENLABS_API_KEY"}
   ],
   polly: [
     access_key_id: {:system, "AWS_ACCESS_KEY_ID"},
@@ -110,6 +137,15 @@ HipcallTts.generate(
   text: "Hello",
   voice: "Joanna",
   provider_opts: [region: "us-east-1"]
+)
+```
+
+```elixir
+HipcallTts.generate(
+  provider: :elevenlabs,
+  text: "Hello",
+  voice: "Xb7hH8MSUJpSbSDYk0k2",
+  provider_opts: [api_key: "override-key"]
 )
 ```
 

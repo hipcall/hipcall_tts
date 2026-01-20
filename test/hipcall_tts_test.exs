@@ -192,12 +192,6 @@ defmodule HipcallTtsTest do
     assert err.message =~ "params must be a keyword list or map"
   end
 
-  test "generate/1 returns normalized error for ElevenLabs not implemented" do
-    assert {:error, err} = HipcallTts.generate(provider: :elevenlabs, text: "hi")
-    assert err.code == :not_implemented
-    assert err.provider == :elevenlabs
-  end
-
   test "validate_params/1 supports map input" do
     assert {:ok, validated} = HipcallTts.validate_params(%{provider: :openai, text: "Hello"})
     assert validated[:provider] == :openai
