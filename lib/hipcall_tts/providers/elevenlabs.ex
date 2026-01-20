@@ -256,15 +256,23 @@ defmodule HipcallTts.Providers.ElevenLabs do
     params = normalize_params(params)
 
     text = params[:text]
-    # Default to Alice
-    voice_id = params[:voice] || "Xb7hH8MSUJpSbSDYk0k2"
-    model_id = params[:model] || "eleven_flash_v2_5"
+    # Get defaults from config
+    provider_config = Config.get_provider_config(:elevenlabs, [])
+    default_voice = Keyword.get(provider_config, :default_voice, "Xb7hH8MSUJpSbSDYk0k2")
+    default_model = Keyword.get(provider_config, :default_model, "eleven_flash_v2_5")
+
+    voice_id = params[:voice] || default_voice
+    model_id = params[:model] || default_model
+
+    # Get default format from config
+    default_format = Keyword.get(provider_config, :default_format, "mp3")
+    format = params[:format] || default_format
 
     # ElevenLabs API requires output_format in format: "{codec}_{samplerate}_{bitrate}"
     # See: https://elevenlabs.io/docs/api-reference/text-to-speech
     # Default format per API docs is "mp3_44100_128", but we use "mp3_22050_32" for compatibility
     output_format =
-      case params[:format] do
+      case format do
         "pcm" -> "pcm_22050"
         "ulaw_8000" -> "ulaw_8000"
         _ -> "mp3_22050_32"
