@@ -39,7 +39,7 @@ defmodule HipcallTts.MixProject do
   end
 
   defp description do
-    "Multi-provider Text-to-Speech (TTS) client for Elixir (OpenAI, AWS Polly) with unified API, splitting, retries, and telemetry."
+    "Multi-provider Text-to-Speech (TTS) client for Elixir (OpenAI, AWS Polly, ElevenLabs) with unified API, splitting, retries, and telemetry."
   end
 
   defp package do
@@ -48,7 +48,7 @@ defmodule HipcallTts.MixProject do
       links: %{
         "GitHub" => @source_url
       },
-      files: ~w(lib config mix.exs README.md LICENSE CHANGELOG.md)
+      files: ~w(lib config mix.exs README.md DOCUMENTATION.md LICENSE CHANGELOG.md)
     ]
   end
 
@@ -57,7 +57,7 @@ defmodule HipcallTts.MixProject do
       main: "HipcallTts",
       source_ref: "v#{@version}",
       source_url: @source_url,
-      extras: ["README.md", "CHANGELOG.md"]
+      extras: ["README.md", "DOCUMENTATION.md", "CHANGELOG.md"]
     ]
   end
 end
