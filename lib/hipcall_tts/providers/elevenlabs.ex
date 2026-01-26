@@ -103,9 +103,13 @@ defmodule HipcallTts.Providers.ElevenLabs do
 
   @voices [
     %{id: "Xb7hH8MSUJpSbSDYk0k2", name: "Alice", gender: :female, language: "en", locale: nil},
-    %{id: "TX3LPaxmHKxFdv7VOQHJ", name: "Liam", gender: :male, language: "en", locale: nil},
-    %{id: "uvU9jrgGLWNPeNA4NgNT", name: "İrem", gender: :female, language: "tr", locale: nil},
-    %{id: "JgYekNWmelei0oWTtYie", name: "Elvan", gender: :female, language: "tr", locale: nil}
+    %{id: "nPczCjzI2devNBz1zQrb", name: "Brian", gender: :male, language: "en", locale: nil},
+    %{id: "N2lVS1w4EtoT3dr4eOWO", name: "Callum", gender: :male, language: "en", locale: nil},
+    %{id: "KbaseEXyT9EE0CQLEfbB", name: "Belma", gender: :female, language: "tr", locale: nil},
+    %{id: "IuRRIAcbQK5AQk1XevPj", name: "Doga", gender: :male, language: "tr", locale: nil},
+    %{id: "zCagxWNd7QOsCjiHDrGR", name: "İpek", gender: :female, language: "tr", locale: nil},
+    %{id: "axtmxCPnqPghs9C5SjJ8", name: "Meloxia", gender: :female, language: "tr", locale: nil},
+    %{id: "Q5n6GDIjpN0pLOlycRFT", name: "Yunus", gender: :male, language: "tr", locale: nil}
   ]
 
   @languages [
