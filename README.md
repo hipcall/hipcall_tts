@@ -20,7 +20,7 @@ Add `hipcall_tts` to your dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:hipcall_tts, "~> 0.1.0"}
+    {:hipcall_tts, "~> 0.2.1"}
   ]
 end
 ```
