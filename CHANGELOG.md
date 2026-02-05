@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- Remove Meloxia voice from ElevenLabs provider (discontinued by ElevenLabs)
+
 ## 0.1.0
 
 - Initial release.

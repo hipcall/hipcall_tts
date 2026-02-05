@@ -108,7 +108,6 @@ defmodule HipcallTts.Providers.ElevenLabs do
     %{id: "KbaseEXyT9EE0CQLEfbB", name: "Belma", gender: :female, language: "tr", locale: nil},
     %{id: "IuRRIAcbQK5AQk1XevPj", name: "Doga", gender: :male, language: "tr", locale: nil},
     %{id: "zCagxWNd7QOsCjiHDrGR", name: "İpek", gender: :female, language: "tr", locale: nil},
-    %{id: "axtmxCPnqPghs9C5SjJ8", name: "Meloxia", gender: :female, language: "tr", locale: nil},
     %{id: "Q5n6GDIjpN0pLOlycRFT", name: "Yunus", gender: :male, language: "tr", locale: nil}
   ]
 
