@@ -31,24 +31,40 @@ defmodule HipcallTts.Providers.Polly do
     }
   ]
 
-  # Subset of voices for MVP; extend later.
   @voices [
-    %{id: "Joanna", name: "Joanna", gender: :female, language: "en", locale: "en-US"},
-    %{id: "Matthew", name: "Matthew", gender: :male, language: "en", locale: "en-US"},
+    # Turkish (tr-TR)
+    %{id: "Filiz", name: "Filiz", gender: :female, language: "tr", locale: "tr-TR"},
+    %{id: "Burcu", name: "Burcu", gender: :female, language: "tr", locale: "tr-TR"},
+    # English (en-GB)
     %{id: "Amy", name: "Amy", gender: :female, language: "en", locale: "en-GB"},
+    %{id: "Emma", name: "Emma", gender: :female, language: "en", locale: "en-GB"},
     %{id: "Brian", name: "Brian", gender: :male, language: "en", locale: "en-GB"},
+    %{id: "Arthur", name: "Arthur", gender: :male, language: "en", locale: "en-GB"},
+    # German (de-DE)
     %{id: "Marlene", name: "Marlene", gender: :female, language: "de", locale: "de-DE"},
     %{id: "Daniel", name: "Daniel", gender: :male, language: "de", locale: "de-DE"},
     %{id: "Vicki", name: "Vicki", gender: :female, language: "de", locale: "de-DE"},
-    %{id: "Filiz", name: "Filiz", gender: :female, language: "tr", locale: "tr-TR"},
-    %{id: "Burcu", name: "Burcu", gender: :female, language: "tr", locale: "tr-TR"}
+    # English (en-US)
+    %{id: "Danielle", name: "Danielle", gender: :female, language: "en", locale: "en-US"},
+    %{id: "Gregory", name: "Gregory", gender: :male, language: "en", locale: "en-US"},
+    %{id: "Ivy", name: "Ivy", gender: :female, language: "en", locale: "en-US"},
+    %{id: "Joanna", name: "Joanna", gender: :female, language: "en", locale: "en-US"},
+    %{id: "Kendra", name: "Kendra", gender: :female, language: "en", locale: "en-US"},
+    %{id: "Kimberly", name: "Kimberly", gender: :female, language: "en", locale: "en-US"},
+    %{id: "Salli", name: "Salli", gender: :female, language: "en", locale: "en-US"},
+    %{id: "Joey", name: "Joey", gender: :male, language: "en", locale: "en-US"},
+    %{id: "Justin", name: "Justin", gender: :male, language: "en", locale: "en-US"},
+    %{id: "Kevin", name: "Kevin", gender: :male, language: "en", locale: "en-US"},
+    %{id: "Matthew", name: "Matthew", gender: :male, language: "en", locale: "en-US"},
+    %{id: "Ruth", name: "Ruth", gender: :female, language: "en", locale: "en-US"},
+    %{id: "Stephen", name: "Stephen", gender: :male, language: "en", locale: "en-US"}
   ]
 
   @languages [
-    %{code: "en", name: "English", locale: "en-US"},
+    %{code: "tr", name: "Turkish", locale: "tr-TR"},
     %{code: "en", name: "English", locale: "en-GB"},
     %{code: "de", name: "German", locale: "de-DE"},
-    %{code: "tr", name: "Turkish", locale: "tr-TR"}
+    %{code: "en", name: "English", locale: "en-US"}
   ]
 
   @capabilities %{

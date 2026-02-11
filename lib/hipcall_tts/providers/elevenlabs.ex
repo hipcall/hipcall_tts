@@ -102,11 +102,79 @@ defmodule HipcallTts.Providers.ElevenLabs do
   }
 
   @voices [
-    %{id: "Xb7hH8MSUJpSbSDYk0k2", name: "Alice", gender: :female, language: "en", locale: nil},
-    %{id: "nPczCjzI2devNBz1zQrb", name: "Brian", gender: :male, language: "en", locale: nil},
-    %{id: "N2lVS1w4EtoT3dr4eOWO", name: "Callum", gender: :male, language: "en", locale: nil},
-    %{id: "KbaseEXyT9EE0CQLEfbB", name: "Belma", gender: :female, language: "tr", locale: nil},
-    %{id: "IuRRIAcbQK5AQk1XevPj", name: "Doga", gender: :male, language: "tr", locale: nil},
+    %{
+      id: "Xb7hH8MSUJpSbSDYk0k2",
+      name: "Alice",
+      gender: :female,
+      language: ["en", "it", "fr", "ar", "ja", "pl", "hi"],
+      locale: nil
+    },
+    %{
+      id: "nPczCjzI2devNBz1zQrb",
+      name: "Brian",
+      gender: :male,
+      language: ["en", "ar", "zh", "pt", "hi", "de", "nl", "sk", "ro"],
+      locale: nil
+    },
+    %{
+      id: "N2lVS1w4EtoT3dr4eOWO",
+      name: "Callum",
+      gender: :male,
+      language: ["en", "fr", "hi"],
+      locale: nil
+    },
+    %{
+      id: "KbaseEXyT9EE0CQLEfbB",
+      name: "Belma",
+      gender: :female,
+      language: [
+        "tr",
+        "de",
+        "fil",
+        "hi",
+        "pl",
+        "el",
+        "es",
+        "fr",
+        "ar",
+        "ro",
+        "ru",
+        "nl",
+        "ko",
+        "pt",
+        "fi",
+        "uk",
+        "ta",
+        "sv",
+        "no"
+      ],
+      locale: nil
+    },
+    %{
+      id: "IuRRIAcbQK5AQk1XevPj",
+      name: "Doga",
+      gender: :male,
+      language: [
+        "tr",
+        "de",
+        "pl",
+        "pt",
+        "es",
+        "el",
+        "it",
+        "hi",
+        "ru",
+        "fr",
+        "id",
+        "nl",
+        "cs",
+        "uk",
+        "ta",
+        "sv",
+        "no"
+      ],
+      locale: nil
+    },
     %{id: "zCagxWNd7QOsCjiHDrGR", name: "İpek", gender: :female, language: "tr", locale: nil},
     %{id: "Q5n6GDIjpN0pLOlycRFT", name: "Yunus", gender: :male, language: "tr", locale: nil}
   ]

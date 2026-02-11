@@ -221,11 +221,14 @@ defmodule HipcallTts.Providers.ElevenLabsTest do
     test "returns list of available voices" do
       voices = ElevenLabs.voices()
       assert is_list(voices)
-      assert length(voices) == 4
+      assert length(voices) == 7
       assert Enum.any?(voices, &(&1.id == "Xb7hH8MSUJpSbSDYk0k2"))
-      assert Enum.any?(voices, &(&1.id == "TX3LPaxmHKxFdv7VOQHJ"))
-      assert Enum.any?(voices, &(&1.id == "uvU9jrgGLWNPeNA4NgNT"))
-      assert Enum.any?(voices, &(&1.id == "JgYekNWmelei0oWTtYie"))
+      assert Enum.any?(voices, &(&1.id == "nPczCjzI2devNBz1zQrb"))
+      assert Enum.any?(voices, &(&1.id == "N2lVS1w4EtoT3dr4eOWO"))
+      assert Enum.any?(voices, &(&1.id == "KbaseEXyT9EE0CQLEfbB"))
+      assert Enum.any?(voices, &(&1.id == "IuRRIAcbQK5AQk1XevPj"))
+      assert Enum.any?(voices, &(&1.id == "zCagxWNd7QOsCjiHDrGR"))
+      assert Enum.any?(voices, &(&1.id == "Q5n6GDIjpN0pLOlycRFT"))
     end
 
     test "Alice is the default voice" do
@@ -234,28 +237,32 @@ defmodule HipcallTts.Providers.ElevenLabsTest do
       assert alice != nil
       assert alice.name == "Alice"
       assert alice.gender == :female
-      assert alice.language == "en"
+      assert is_list(alice.language)
+      assert "en" in alice.language
     end
 
     test "voices have correct properties" do
       voices = ElevenLabs.voices()
-      liam = Enum.find(voices, &(&1.id == "TX3LPaxmHKxFdv7VOQHJ"))
-      assert liam != nil
-      assert liam.name == "Liam"
-      assert liam.gender == :male
-      assert liam.language == "en"
 
-      irem = Enum.find(voices, &(&1.id == "uvU9jrgGLWNPeNA4NgNT"))
-      assert irem != nil
-      assert irem.name == "İrem"
-      assert irem.gender == :female
-      assert irem.language == "tr"
+      brian = Enum.find(voices, &(&1.id == "nPczCjzI2devNBz1zQrb"))
+      assert brian != nil
+      assert brian.name == "Brian"
+      assert brian.gender == :male
+      assert is_list(brian.language)
+      assert "en" in brian.language
 
-      elvan = Enum.find(voices, &(&1.id == "JgYekNWmelei0oWTtYie"))
-      assert elvan != nil
-      assert elvan.name == "Elvan"
-      assert elvan.gender == :female
-      assert elvan.language == "tr"
+      belma = Enum.find(voices, &(&1.id == "KbaseEXyT9EE0CQLEfbB"))
+      assert belma != nil
+      assert belma.name == "Belma"
+      assert belma.gender == :female
+      assert is_list(belma.language)
+      assert "tr" in belma.language
+
+      ipek = Enum.find(voices, &(&1.id == "zCagxWNd7QOsCjiHDrGR"))
+      assert ipek != nil
+      assert ipek.name == "İpek"
+      assert ipek.gender == :female
+      assert ipek.language == "tr"
     end
   end
 
