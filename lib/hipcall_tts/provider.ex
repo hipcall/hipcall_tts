@@ -43,7 +43,7 @@ defmodule HipcallTts.Provider do
           id: String.t(),
           name: String.t(),
           gender: :male | :female | :neutral | nil,
-          language: String.t(),
+          language: String.t() | [String.t()],
           locale: String.t() | nil
         }
   @type language :: %{

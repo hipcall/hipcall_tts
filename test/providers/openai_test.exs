@@ -150,9 +150,16 @@ defmodule HipcallTts.Providers.OpenAITest do
     test "returns list of available voices" do
       voices = OpenAI.voices()
       assert is_list(voices)
-      assert length(voices) == 6
+      assert length(voices) == 13
       assert Enum.any?(voices, &(&1.id == "nova"))
       assert Enum.any?(voices, &(&1.id == "alloy"))
+      assert Enum.any?(voices, &(&1.id == "marin"))
+      assert Enum.any?(voices, &(&1.id == "cedar"))
+
+      alloy = Enum.find(voices, &(&1.id == "alloy"))
+      assert is_list(alloy.language)
+      assert "en" in alloy.language
+      assert "tr" in alloy.language
     end
   end
 
