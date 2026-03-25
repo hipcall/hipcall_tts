@@ -109,6 +109,71 @@ defmodule HipcallTts.Providers.PollyTest do
     assert {:error, _} = Polly.validate_params(text: "hi", format: "wav")
   end
 
+  test "validate_params/1 rejects voice-engine mismatch" do
+    # Filiz is standard-only, should reject neural
+    assert {:error, msg} = Polly.validate_params(text: "hi", voice: "Filiz", model: "neural")
+    assert msg =~ "does not support"
+    assert msg =~ "neural"
+
+    # Burcu is neural-only, should reject standard
+    assert {:error, msg} = Polly.validate_params(text: "hi", voice: "Burcu", model: "standard")
+    assert msg =~ "does not support"
+    assert msg =~ "standard"
+
+    # Marlene is standard-only, should reject neural
+    assert {:error, msg} = Polly.validate_params(text: "hi", voice: "Marlene", model: "neural")
+    assert msg =~ "does not support"
+  end
+
+  test "validate_params/1 accepts valid voice-engine combinations" do
+    # Standard-only voice with standard engine
+    assert :ok = Polly.validate_params(text: "hi", voice: "Filiz", model: "standard")
+
+    # Neural-only voice with neural engine
+    assert :ok = Polly.validate_params(text: "hi", voice: "Burcu", model: "neural")
+
+    # Voice supporting both engines
+    assert :ok = Polly.validate_params(text: "hi", voice: "Amy", model: "standard")
+    assert :ok = Polly.validate_params(text: "hi", voice: "Amy", model: "neural")
+    assert :ok = Polly.validate_params(text: "hi", voice: "Joanna", model: "standard")
+    assert :ok = Polly.validate_params(text: "hi", voice: "Joanna", model: "neural")
+  end
+
+  describe "compatible_models/1" do
+    test "returns only standard for standard-only voices" do
+      models = Polly.compatible_models("Filiz")
+      assert length(models) == 1
+      assert hd(models).id == "standard"
+
+      models = Polly.compatible_models("Marlene")
+      assert length(models) == 1
+      assert hd(models).id == "standard"
+    end
+
+    test "returns only neural for neural-only voices" do
+      for voice_id <- ~w(Burcu Arthur Daniel Vicki Danielle Gregory Kevin Ruth Stephen) do
+        models = Polly.compatible_models(voice_id)
+        assert length(models) == 1, "Expected 1 model for #{voice_id}, got #{length(models)}"
+        assert hd(models).id == "neural", "Expected neural for #{voice_id}"
+      end
+    end
+
+    test "returns both models for voices supporting both engines" do
+      for voice_id <- ~w(Amy Emma Brian Ivy Joanna Kendra Kimberly Salli Joey Justin Matthew) do
+        models = Polly.compatible_models(voice_id)
+        assert length(models) == 2, "Expected 2 models for #{voice_id}, got #{length(models)}"
+        model_ids = Enum.map(models, & &1.id)
+        assert "standard" in model_ids
+        assert "neural" in model_ids
+      end
+    end
+
+    test "returns all models for unknown voice" do
+      models = Polly.compatible_models("UnknownVoice")
+      assert length(models) == 2
+    end
+  end
+
   test "generate/1 works with endpoint query string and default region", %{bypass: bypass} do
     # Override endpoint_url to include a query string (exercises canonical query handling).
     original_url = Application.get_env(:hipcall_tts, :polly_endpoint_url)

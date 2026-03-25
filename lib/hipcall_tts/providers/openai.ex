@@ -90,26 +90,113 @@ defmodule HipcallTts.Providers.OpenAI do
     "cy"
   ]
 
+  @model_ids Enum.map(@models, & &1.id)
+
   @voices [
-    %{id: "alloy", name: "Alloy", gender: :neutral, language: @supported_languages, locale: nil},
-    %{id: "ash", name: "Ash", gender: :male, language: @supported_languages, locale: nil},
-    %{id: "ballad", name: "Ballad", gender: :male, language: @supported_languages, locale: nil},
-    %{id: "coral", name: "Coral", gender: :female, language: @supported_languages, locale: nil},
-    %{id: "echo", name: "Echo", gender: :male, language: @supported_languages, locale: nil},
-    %{id: "fable", name: "Fable", gender: :neutral, language: @supported_languages, locale: nil},
-    %{id: "nova", name: "Nova", gender: :female, language: @supported_languages, locale: nil},
-    %{id: "onyx", name: "Onyx", gender: :male, language: @supported_languages, locale: nil},
-    %{id: "sage", name: "Sage", gender: :female, language: @supported_languages, locale: nil},
+    %{
+      id: "alloy",
+      name: "Alloy",
+      gender: :neutral,
+      language: @supported_languages,
+      locale: nil,
+      supported_models: @model_ids
+    },
+    %{
+      id: "ash",
+      name: "Ash",
+      gender: :male,
+      language: @supported_languages,
+      locale: nil,
+      supported_models: @model_ids
+    },
+    %{
+      id: "ballad",
+      name: "Ballad",
+      gender: :male,
+      language: @supported_languages,
+      locale: nil,
+      supported_models: @model_ids
+    },
+    %{
+      id: "coral",
+      name: "Coral",
+      gender: :female,
+      language: @supported_languages,
+      locale: nil,
+      supported_models: @model_ids
+    },
+    %{
+      id: "echo",
+      name: "Echo",
+      gender: :male,
+      language: @supported_languages,
+      locale: nil,
+      supported_models: @model_ids
+    },
+    %{
+      id: "fable",
+      name: "Fable",
+      gender: :neutral,
+      language: @supported_languages,
+      locale: nil,
+      supported_models: @model_ids
+    },
+    %{
+      id: "nova",
+      name: "Nova",
+      gender: :female,
+      language: @supported_languages,
+      locale: nil,
+      supported_models: @model_ids
+    },
+    %{
+      id: "onyx",
+      name: "Onyx",
+      gender: :male,
+      language: @supported_languages,
+      locale: nil,
+      supported_models: @model_ids
+    },
+    %{
+      id: "sage",
+      name: "Sage",
+      gender: :female,
+      language: @supported_languages,
+      locale: nil,
+      supported_models: @model_ids
+    },
     %{
       id: "shimmer",
       name: "Shimmer",
       gender: :female,
       language: @supported_languages,
-      locale: nil
+      locale: nil,
+      supported_models: @model_ids
     },
-    %{id: "verse", name: "Verse", gender: :male, language: @supported_languages, locale: nil},
-    %{id: "marin", name: "Marin", gender: :female, language: @supported_languages, locale: nil},
-    %{id: "cedar", name: "Cedar", gender: :male, language: @supported_languages, locale: nil}
+    %{
+      id: "verse",
+      name: "Verse",
+      gender: :male,
+      language: @supported_languages,
+      locale: nil,
+      supported_models: @model_ids
+    },
+    %{
+      id: "marin",
+      name: "Marin",
+      gender: :female,
+      language: @supported_languages,
+      locale: nil,
+      supported_models: @model_ids
+    },
+    %{
+      id: "cedar",
+      name: "Cedar",
+      gender: :male,
+      language: @supported_languages,
+      locale: nil,
+      supported_models: @model_ids
+    }
   ]
 
   @languages [
@@ -215,6 +302,10 @@ defmodule HipcallTts.Providers.OpenAI do
       params[:model] && not valid_model?(params[:model]) ->
         {:error, "Invalid model: #{params[:model]}"}
 
+      params[:voice] && params[:model] &&
+          not voice_supports_model?(params[:voice], params[:model]) ->
+        {:error, "Voice #{params[:voice]} does not support the #{params[:model]} model"}
+
       true ->
         :ok
     end
@@ -231,6 +322,18 @@ defmodule HipcallTts.Providers.OpenAI do
   @impl HipcallTts.Provider
   @spec languages() :: [HipcallTts.Provider.language()]
   def languages, do: @languages
+
+  @impl HipcallTts.Provider
+  @spec compatible_models(String.t()) :: [HipcallTts.Provider.model()]
+  def compatible_models(voice_id) do
+    case Enum.find(@voices, fn v -> v.id == voice_id end) do
+      %{supported_models: supported} when is_list(supported) ->
+        Enum.filter(@models, fn m -> m.id in supported end)
+
+      _ ->
+        @models
+    end
+  end
 
   @impl HipcallTts.Provider
   @spec capabilities() :: HipcallTts.Provider.capabilities()
@@ -381,5 +484,12 @@ defmodule HipcallTts.Providers.OpenAI do
 
   defp valid_model?(model_id) do
     Enum.any?(@models, fn model -> model.id == model_id end)
+  end
+
+  defp voice_supports_model?(voice_id, model_id) do
+    case Enum.find(@voices, fn v -> v.id == voice_id end) do
+      %{supported_models: models} when is_list(models) -> model_id in models
+      _ -> true
+    end
   end
 end

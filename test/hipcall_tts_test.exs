@@ -130,6 +130,31 @@ defmodule HipcallTtsTest do
     assert {:error, _} = HipcallTts.voices(:unknown)
     assert {:error, _} = HipcallTts.languages(:unknown)
     assert {:error, _} = HipcallTts.capabilities(:unknown)
+    assert {:error, _} = HipcallTts.compatible_models(:unknown, "voice")
+  end
+
+  test "compatible_models/2 delegates to providers" do
+    # Polly standard-only voice
+    assert {:ok, models} = HipcallTts.compatible_models(:polly, "Filiz")
+    assert length(models) == 1
+    assert hd(models).id == "standard"
+
+    # Polly neural-only voice
+    assert {:ok, models} = HipcallTts.compatible_models(:polly, "Burcu")
+    assert length(models) == 1
+    assert hd(models).id == "neural"
+
+    # Polly both-engine voice
+    assert {:ok, models} = HipcallTts.compatible_models(:polly, "Joanna")
+    assert length(models) == 2
+
+    # OpenAI returns all models for any voice
+    assert {:ok, models} = HipcallTts.compatible_models(:openai, "nova")
+    assert length(models) == 2
+
+    # ElevenLabs returns all models for any voice
+    assert {:ok, models} = HipcallTts.compatible_models(:elevenlabs, "Xb7hH8MSUJpSbSDYk0k2")
+    assert length(models) == 2
   end
 
   test "provider_opts are merged into provider params" do

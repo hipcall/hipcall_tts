@@ -44,7 +44,8 @@ defmodule HipcallTts.Provider do
           name: String.t(),
           gender: :male | :female | :neutral | nil,
           language: String.t() | [String.t()],
-          locale: String.t() | nil
+          locale: String.t() | nil,
+          supported_models: [String.t()] | nil
         }
   @type language :: %{
           code: String.t(),
@@ -136,6 +137,23 @@ defmodule HipcallTts.Provider do
       # => [%{code: "en", name: "English", ...}, ...]
   """
   @callback languages() :: [language]
+
+  @doc """
+  Returns the list of models compatible with a specific voice.
+
+  For providers where some voices only support certain models/engines (e.g., AWS Polly),
+  this filters the model list accordingly. For providers where all voices support all models,
+  this returns the full model list.
+
+  ## Examples
+
+      models = Provider.compatible_models("Filiz")
+      # => [%{id: "standard", ...}]
+
+      models = Provider.compatible_models("Amy")
+      # => [%{id: "standard", ...}, %{id: "neural", ...}]
+  """
+  @callback compatible_models(voice_id :: String.t()) :: [model]
 
   @doc """
   Returns the capabilities of this provider.

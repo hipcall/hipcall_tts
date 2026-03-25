@@ -20,7 +20,7 @@ Add `hipcall_tts` to your dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:hipcall_tts, "~> 0.3.0"}
+    {:hipcall_tts, "~> 0.4.0"}
   ]
 end
 ```
@@ -214,6 +214,29 @@ HipcallTts.providers()
 # Get provider capabilities
 {:ok, caps} = HipcallTts.capabilities(:elevenlabs)
 # => %{streaming: false, formats: ["mp3", "pcm", "ulaw_8000"], ...}
+
+# Get models compatible with a specific voice (see Voice-Model Compatibility section)
+{:ok, models} = HipcallTts.compatible_models(:polly, "Filiz")
+```
+
+## Voice-Model Compatibility
+
+Each voice declares which models it supports via the `supported_models` field. Use `HipcallTts.compatible_models/2` to query compatible models for a voice, and invalid combinations are rejected at validation time.
+
+```elixir
+# Check which engines a Polly voice supports
+{:ok, models} = HipcallTts.compatible_models(:polly, "Filiz")
+# => [%{id: "standard", ...}]  (standard only)
+
+{:ok, models} = HipcallTts.compatible_models(:polly, "Burcu")
+# => [%{id: "neural", ...}]  (neural only)
+
+{:ok, models} = HipcallTts.compatible_models(:polly, "Joanna")
+# => [%{id: "standard", ...}, %{id: "neural", ...}]  (both)
+
+# OpenAI and ElevenLabs voices support all models
+{:ok, models} = HipcallTts.compatible_models(:openai, "nova")
+# => [%{id: "tts-1", ...}, %{id: "tts-1-hd", ...}]
 ```
 
 ## Advanced Features

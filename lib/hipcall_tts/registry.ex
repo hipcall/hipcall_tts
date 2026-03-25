@@ -208,4 +208,36 @@ defmodule HipcallTts.Registry do
       {:error, message} -> {:error, message}
     end
   end
+
+  @doc """
+  Returns models compatible with a specific voice for the given provider.
+
+  For providers like AWS Polly where some voices only support certain engines,
+  this filters the model list accordingly. For other providers, returns all models.
+
+  ## Parameters
+
+  - `provider` - The provider name as an atom
+  - `voice_id` - The voice identifier string
+
+  ## Returns
+
+  - `{:ok, [model]}` - List of compatible model maps on success
+  - `{:error, message}` - Error if the provider is invalid
+
+  ## Examples
+
+      {:ok, models} = HipcallTts.Registry.compatible_models(:polly, "Filiz")
+      # => {:ok, [%{id: "standard", ...}]}
+
+      {:ok, models} = HipcallTts.Registry.compatible_models(:polly, "Amy")
+      # => {:ok, [%{id: "standard", ...}, %{id: "neural", ...}]}
+  """
+  @spec compatible_models(atom(), String.t()) :: {:ok, list()} | {:error, String.t()}
+  def compatible_models(provider, voice_id) do
+    case get_provider(provider) do
+      {:ok, module} -> {:ok, module.compatible_models(voice_id)}
+      {:error, message} -> {:error, message}
+    end
+  end
 end
