@@ -33,31 +33,185 @@ defmodule HipcallTts.Providers.Polly do
 
   @voices [
     # Turkish (tr-TR)
-    %{id: "Filiz", name: "Filiz", gender: :female, language: "tr", locale: "tr-TR"},
-    %{id: "Burcu", name: "Burcu", gender: :female, language: "tr", locale: "tr-TR"},
+    %{
+      id: "Filiz",
+      name: "Filiz",
+      gender: :female,
+      language: "tr",
+      locale: "tr-TR",
+      supported_models: ["standard"]
+    },
+    %{
+      id: "Burcu",
+      name: "Burcu",
+      gender: :female,
+      language: "tr",
+      locale: "tr-TR",
+      supported_models: ["neural"]
+    },
     # English (en-GB)
-    %{id: "Amy", name: "Amy", gender: :female, language: "en", locale: "en-GB"},
-    %{id: "Emma", name: "Emma", gender: :female, language: "en", locale: "en-GB"},
-    %{id: "Brian", name: "Brian", gender: :male, language: "en", locale: "en-GB"},
-    %{id: "Arthur", name: "Arthur", gender: :male, language: "en", locale: "en-GB"},
+    %{
+      id: "Amy",
+      name: "Amy",
+      gender: :female,
+      language: "en",
+      locale: "en-GB",
+      supported_models: ["standard", "neural"]
+    },
+    %{
+      id: "Emma",
+      name: "Emma",
+      gender: :female,
+      language: "en",
+      locale: "en-GB",
+      supported_models: ["standard", "neural"]
+    },
+    %{
+      id: "Brian",
+      name: "Brian",
+      gender: :male,
+      language: "en",
+      locale: "en-GB",
+      supported_models: ["standard", "neural"]
+    },
+    %{
+      id: "Arthur",
+      name: "Arthur",
+      gender: :male,
+      language: "en",
+      locale: "en-GB",
+      supported_models: ["neural"]
+    },
     # German (de-DE)
-    %{id: "Marlene", name: "Marlene", gender: :female, language: "de", locale: "de-DE"},
-    %{id: "Daniel", name: "Daniel", gender: :male, language: "de", locale: "de-DE"},
-    %{id: "Vicki", name: "Vicki", gender: :female, language: "de", locale: "de-DE"},
+    %{
+      id: "Marlene",
+      name: "Marlene",
+      gender: :female,
+      language: "de",
+      locale: "de-DE",
+      supported_models: ["standard"]
+    },
+    %{
+      id: "Daniel",
+      name: "Daniel",
+      gender: :male,
+      language: "de",
+      locale: "de-DE",
+      supported_models: ["neural"]
+    },
+    %{
+      id: "Vicki",
+      name: "Vicki",
+      gender: :female,
+      language: "de",
+      locale: "de-DE",
+      supported_models: ["neural"]
+    },
     # English (en-US)
-    %{id: "Danielle", name: "Danielle", gender: :female, language: "en", locale: "en-US"},
-    %{id: "Gregory", name: "Gregory", gender: :male, language: "en", locale: "en-US"},
-    %{id: "Ivy", name: "Ivy", gender: :female, language: "en", locale: "en-US"},
-    %{id: "Joanna", name: "Joanna", gender: :female, language: "en", locale: "en-US"},
-    %{id: "Kendra", name: "Kendra", gender: :female, language: "en", locale: "en-US"},
-    %{id: "Kimberly", name: "Kimberly", gender: :female, language: "en", locale: "en-US"},
-    %{id: "Salli", name: "Salli", gender: :female, language: "en", locale: "en-US"},
-    %{id: "Joey", name: "Joey", gender: :male, language: "en", locale: "en-US"},
-    %{id: "Justin", name: "Justin", gender: :male, language: "en", locale: "en-US"},
-    %{id: "Kevin", name: "Kevin", gender: :male, language: "en", locale: "en-US"},
-    %{id: "Matthew", name: "Matthew", gender: :male, language: "en", locale: "en-US"},
-    %{id: "Ruth", name: "Ruth", gender: :female, language: "en", locale: "en-US"},
-    %{id: "Stephen", name: "Stephen", gender: :male, language: "en", locale: "en-US"}
+    %{
+      id: "Danielle",
+      name: "Danielle",
+      gender: :female,
+      language: "en",
+      locale: "en-US",
+      supported_models: ["neural"]
+    },
+    %{
+      id: "Gregory",
+      name: "Gregory",
+      gender: :male,
+      language: "en",
+      locale: "en-US",
+      supported_models: ["neural"]
+    },
+    %{
+      id: "Ivy",
+      name: "Ivy",
+      gender: :female,
+      language: "en",
+      locale: "en-US",
+      supported_models: ["standard", "neural"]
+    },
+    %{
+      id: "Joanna",
+      name: "Joanna",
+      gender: :female,
+      language: "en",
+      locale: "en-US",
+      supported_models: ["standard", "neural"]
+    },
+    %{
+      id: "Kendra",
+      name: "Kendra",
+      gender: :female,
+      language: "en",
+      locale: "en-US",
+      supported_models: ["standard", "neural"]
+    },
+    %{
+      id: "Kimberly",
+      name: "Kimberly",
+      gender: :female,
+      language: "en",
+      locale: "en-US",
+      supported_models: ["standard", "neural"]
+    },
+    %{
+      id: "Salli",
+      name: "Salli",
+      gender: :female,
+      language: "en",
+      locale: "en-US",
+      supported_models: ["standard", "neural"]
+    },
+    %{
+      id: "Joey",
+      name: "Joey",
+      gender: :male,
+      language: "en",
+      locale: "en-US",
+      supported_models: ["standard", "neural"]
+    },
+    %{
+      id: "Justin",
+      name: "Justin",
+      gender: :male,
+      language: "en",
+      locale: "en-US",
+      supported_models: ["standard", "neural"]
+    },
+    %{
+      id: "Kevin",
+      name: "Kevin",
+      gender: :male,
+      language: "en",
+      locale: "en-US",
+      supported_models: ["neural"]
+    },
+    %{
+      id: "Matthew",
+      name: "Matthew",
+      gender: :male,
+      language: "en",
+      locale: "en-US",
+      supported_models: ["standard", "neural"]
+    },
+    %{
+      id: "Ruth",
+      name: "Ruth",
+      gender: :female,
+      language: "en",
+      locale: "en-US",
+      supported_models: ["neural"]
+    },
+    %{
+      id: "Stephen",
+      name: "Stephen",
+      gender: :male,
+      language: "en",
+      locale: "en-US",
+      supported_models: ["neural"]
+    }
   ]
 
   @languages [
@@ -108,6 +262,10 @@ defmodule HipcallTts.Providers.Polly do
       params[:model] && not valid_model?(params[:model]) ->
         {:error, "Invalid model/engine: #{params[:model]} (expected \"standard\" or \"neural\")"}
 
+      params[:voice] && params[:model] &&
+          not voice_supports_model?(params[:voice], params[:model]) ->
+        {:error, "Voice #{params[:voice]} does not support the #{params[:model]} model"}
+
       params[:format] && params[:format] not in @capabilities.formats ->
         {:error,
          "Invalid format: #{params[:format]} (supported: #{Enum.join(@capabilities.formats, ", ")})"}
@@ -128,6 +286,18 @@ defmodule HipcallTts.Providers.Polly do
   @impl HipcallTts.Provider
   @spec languages() :: [HipcallTts.Provider.language()]
   def languages, do: @languages
+
+  @impl HipcallTts.Provider
+  @spec compatible_models(String.t()) :: [HipcallTts.Provider.model()]
+  def compatible_models(voice_id) do
+    case Enum.find(@voices, fn v -> v.id == voice_id end) do
+      %{supported_models: supported} when is_list(supported) ->
+        Enum.filter(@models, fn m -> m.id in supported end)
+
+      _ ->
+        @models
+    end
+  end
 
   @impl HipcallTts.Provider
   @spec capabilities() :: HipcallTts.Provider.capabilities()
@@ -391,4 +561,11 @@ defmodule HipcallTts.Providers.Polly do
 
   defp valid_voice?(voice_id), do: Enum.any?(@voices, fn v -> v.id == voice_id end)
   defp valid_model?(model_id), do: Enum.any?(@models, fn m -> m.id == model_id end)
+
+  defp voice_supports_model?(voice_id, model_id) do
+    case Enum.find(@voices, fn v -> v.id == voice_id end) do
+      %{supported_models: models} when is_list(models) -> model_id in models
+      _ -> true
+    end
+  end
 end

@@ -163,6 +163,31 @@ defmodule HipcallTts.Providers.OpenAITest do
     end
   end
 
+  describe "compatible_models/1" do
+    test "returns all models for any known voice" do
+      all_models = OpenAI.models()
+
+      for voice <- OpenAI.voices() do
+        models = OpenAI.compatible_models(voice.id)
+        assert models == all_models, "Expected all models for #{voice.name}"
+      end
+    end
+
+    test "returns all models for unknown voice" do
+      models = OpenAI.compatible_models("unknown-voice")
+      assert models == OpenAI.models()
+    end
+  end
+
+  describe "voices have supported_models" do
+    test "all voices include supported_models field" do
+      for voice <- OpenAI.voices() do
+        assert is_list(voice.supported_models), "#{voice.name} missing supported_models"
+        assert length(voice.supported_models) == 2
+      end
+    end
+  end
+
   describe "languages/0" do
     test "returns list of supported languages" do
       languages = OpenAI.languages()

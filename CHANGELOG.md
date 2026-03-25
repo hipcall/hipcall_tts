@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0
+
+- Add voice-model compatibility: each voice now declares its `supported_models` field
+- Add `supported_models` field to the `voice` type in `HipcallTts.Provider`
+- Add `compatible_models/1` callback to `HipcallTts.Provider` behaviour
+- Add `HipcallTts.compatible_models/2` to query compatible models for a given voice
+- All providers: `validate_params/1` now rejects invalid voice-model combinations with a clear error message
+
 ## 0.3.0
 
 - Update voice `language` field to support arrays for multilingual voices (`String.t() | [String.t()]`)

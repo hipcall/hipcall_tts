@@ -111,6 +111,10 @@ defmodule HipcallTts do
   @spec capabilities(atom()) :: {:ok, map()} | {:error, String.t()}
   defdelegate capabilities(provider), to: Registry
 
+  @doc "List models compatible with a specific voice for a provider."
+  @spec compatible_models(atom(), String.t()) :: {:ok, list()} | {:error, String.t()}
+  defdelegate compatible_models(provider, voice_id), to: Registry
+
   @doc false
   @spec validate_params(params()) :: {:ok, keyword()} | {:error, any()}
   def validate_params(params) when is_map(params), do: validate_params(Map.to_list(params))

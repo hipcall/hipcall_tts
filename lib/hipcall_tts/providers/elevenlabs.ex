@@ -101,27 +101,32 @@ defmodule HipcallTts.Providers.ElevenLabs do
     "eleven_flash_v2_5" => 40000
   }
 
+  @model_ids Enum.map(@models, & &1.id)
+
   @voices [
     %{
       id: "Xb7hH8MSUJpSbSDYk0k2",
       name: "Alice",
       gender: :female,
       language: ["en", "it", "fr", "ar", "ja", "pl", "hi"],
-      locale: nil
+      locale: nil,
+      supported_models: @model_ids
     },
     %{
       id: "nPczCjzI2devNBz1zQrb",
       name: "Brian",
       gender: :male,
       language: ["en", "ar", "zh", "pt", "hi", "de", "nl", "sk", "ro"],
-      locale: nil
+      locale: nil,
+      supported_models: @model_ids
     },
     %{
       id: "N2lVS1w4EtoT3dr4eOWO",
       name: "Callum",
       gender: :male,
       language: ["en", "fr", "hi"],
-      locale: nil
+      locale: nil,
+      supported_models: @model_ids
     },
     %{
       id: "KbaseEXyT9EE0CQLEfbB",
@@ -148,7 +153,8 @@ defmodule HipcallTts.Providers.ElevenLabs do
         "sv",
         "no"
       ],
-      locale: nil
+      locale: nil,
+      supported_models: @model_ids
     },
     %{
       id: "IuRRIAcbQK5AQk1XevPj",
@@ -173,10 +179,25 @@ defmodule HipcallTts.Providers.ElevenLabs do
         "sv",
         "no"
       ],
-      locale: nil
+      locale: nil,
+      supported_models: @model_ids
     },
-    %{id: "zCagxWNd7QOsCjiHDrGR", name: "İpek", gender: :female, language: "tr", locale: nil},
-    %{id: "Q5n6GDIjpN0pLOlycRFT", name: "Yunus", gender: :male, language: "tr", locale: nil}
+    %{
+      id: "zCagxWNd7QOsCjiHDrGR",
+      name: "İpek",
+      gender: :female,
+      language: "tr",
+      locale: nil,
+      supported_models: @model_ids
+    },
+    %{
+      id: "Q5n6GDIjpN0pLOlycRFT",
+      name: "Yunus",
+      gender: :male,
+      language: "tr",
+      locale: nil,
+      supported_models: @model_ids
+    }
   ]
 
   @languages [
@@ -272,6 +293,10 @@ defmodule HipcallTts.Providers.ElevenLabs do
       params[:model] && not valid_model?(params[:model]) ->
         {:error, "Invalid model: #{params[:model]}"}
 
+      params[:voice] && params[:model] &&
+          not voice_supports_model?(params[:voice], params[:model]) ->
+        {:error, "Voice #{params[:voice]} does not support the #{params[:model]} model"}
+
       params[:format] && params[:format] not in @capabilities.formats ->
         {:error,
          "Invalid format: #{params[:format]} (supported: #{Enum.join(@capabilities.formats, ", ")})"}
@@ -292,6 +317,18 @@ defmodule HipcallTts.Providers.ElevenLabs do
   @impl HipcallTts.Provider
   @spec languages() :: [HipcallTts.Provider.language()]
   def languages, do: @languages
+
+  @impl HipcallTts.Provider
+  @spec compatible_models(String.t()) :: [HipcallTts.Provider.model()]
+  def compatible_models(voice_id) do
+    case Enum.find(@voices, fn v -> v.id == voice_id end) do
+      %{supported_models: supported} when is_list(supported) ->
+        Enum.filter(@models, fn m -> m.id in supported end)
+
+      _ ->
+        @models
+    end
+  end
 
   @impl HipcallTts.Provider
   @spec capabilities() :: HipcallTts.Provider.capabilities()
@@ -482,5 +519,12 @@ defmodule HipcallTts.Providers.ElevenLabs do
 
   defp valid_model?(model_id) do
     Enum.any?(@models, fn model -> model.id == model_id end)
+  end
+
+  defp voice_supports_model?(voice_id, model_id) do
+    case Enum.find(@voices, fn v -> v.id == voice_id end) do
+      %{supported_models: models} when is_list(models) -> model_id in models
+      _ -> true
+    end
   end
 end
