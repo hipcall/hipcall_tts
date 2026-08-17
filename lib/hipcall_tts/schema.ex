@@ -27,7 +27,7 @@ defmodule HipcallTts.Schema do
 
   ## Required Parameters
 
-  - `:provider` - The TTS provider to use (`:openai`, `:elevenlabs`, or `:polly`)
+  - `:provider` - The TTS provider to use (`:openai`, `:elevenlabs`, `:polly`, or `:soniox`)
   - `:text` - The text to convert to speech
 
   ## Optional Parameters
@@ -78,7 +78,7 @@ defmodule HipcallTts.Schema do
   def generate_schema do
     [
       provider: [
-        type: {:in, [:openai, :elevenlabs, :polly]},
+        type: {:in, [:openai, :elevenlabs, :polly, :soniox]},
         required: true,
         doc: """
         TTS provider to use.
@@ -87,6 +87,7 @@ defmodule HipcallTts.Schema do
         - `:openai` - OpenAI TTS API
         - `:elevenlabs` - ElevenLabs TTS API
         - `:polly` - AWS Polly TTS service
+        - `:soniox` - Soniox TTS API
         """
       ],
       text: [
@@ -174,6 +175,7 @@ defmodule HipcallTts.Schema do
         - OpenAI: "alloy", "echo", "fable", "onyx", "nova", "shimmer"
         - ElevenLabs: Voice ID string
         - AWS Polly: Voice name like "Joanna", "Matthew", etc.
+        - Soniox: Voice name like "Mina", "Daniel", "Emma", etc.
         """
       ],
       model: [
@@ -219,6 +221,10 @@ defmodule HipcallTts.Schema do
         - 0.5 = half speed
         - 1.0 = normal speed (default)
         - 2.0 = double speed
+
+        The accepted range is provider-specific and narrower for some providers
+        (Soniox accepts 0.7 to 1.3). Values outside a provider's range are
+        rejected by that provider's `validate_params/1`.
         """
       ],
       pitch: [

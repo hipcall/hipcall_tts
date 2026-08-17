@@ -11,12 +11,13 @@ defmodule HipcallTts.Registry do
   - `:openai` - OpenAI TTS API
   - `:elevenlabs` - ElevenLabs TTS API
   - `:polly` - AWS Polly TTS service
+  - `:soniox` - Soniox TTS API
 
   ## Examples
 
       # Get list of available providers
       HipcallTts.Registry.providers()
-      # => [:openai, :elevenlabs, :polly]
+      # => [:openai, :elevenlabs, :polly, :soniox]
 
       # Get provider module
       {:ok, module} = HipcallTts.Registry.get_provider(:openai)
@@ -34,7 +35,8 @@ defmodule HipcallTts.Registry do
   @providers [
     {:openai, HipcallTts.Providers.OpenAI},
     {:elevenlabs, HipcallTts.Providers.ElevenLabs},
-    {:polly, HipcallTts.Providers.Polly}
+    {:polly, HipcallTts.Providers.Polly},
+    {:soniox, HipcallTts.Providers.Soniox}
   ]
 
   @doc """
@@ -57,7 +59,7 @@ defmodule HipcallTts.Registry do
 
   ## Parameters
 
-  - `name` - The provider name as an atom (e.g., `:openai`, `:elevenlabs`, `:polly`)
+  - `name` - The provider name as an atom (e.g., `:openai`, `:elevenlabs`, `:polly`, `:soniox`)
 
   ## Returns
 

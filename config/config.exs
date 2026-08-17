@@ -23,4 +23,12 @@ config :hipcall_tts, :providers,
     # Optional:
     # region: {:system, "AWS_REGION"},
     # session_token: {:system, "AWS_SESSION_TOKEN"}
+  ],
+  soniox: [
+    api_key: {:system, "SONIOX_API_KEY"},
+    default_model: "tts-rt-v2",
+    default_voice: "Mina",
+    default_format: "mp3",
+    # Soniox requires a language on every request; used when the caller omits it.
+    default_language: "en"
   ]

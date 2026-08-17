@@ -16,3 +16,10 @@ c
 *.wav
 *.ogg
 *.pcm
+
+# scratch/working files
+/tmp
+
+# local-only vendor API reference (kept out of git and out of the hex package;
+# lives here rather than under /doc so `mix docs` cannot wipe it)
+/reference
