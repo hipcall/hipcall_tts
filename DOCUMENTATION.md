@@ -19,6 +19,7 @@ A multi-provider Text-to-Speech (TTS) client for Elixir with a unified API, auto
    - [OpenAI](#openai)
    - [AWS Polly](#aws-polly)
    - [ElevenLabs](#elevenlabs)
+   - [Soniox](#soniox)
 7. [Introspection API](#introspection-api)
 8. [Advanced Features](#advanced-features)
    - [Automatic Text Splitting](#automatic-text-splitting)
@@ -101,9 +102,13 @@ config :hipcall_tts, :providers,
   voice: "nova"
 )
 
-# Save to file
+# The result is the raw bytes of a complete audio file — write them straight out.
+# Use an extension matching the `:format` you asked for (default is "mp3").
 File.write!("output.mp3", audio_binary)
 ```
+
+See [Working with the returned audio](#working-with-the-returned-audio) for
+serving over HTTP, Base64-encoding, and the raw-PCM caveat.
 
 ---
 
@@ -136,6 +141,13 @@ config :hipcall_tts, :providers,
     default_model: "standard",
     default_voice: "Joanna",
     default_format: "mp3"
+  ],
+  soniox: [
+    api_key: {:system, "SONIOX_API_KEY"},
+    default_model: "tts-rt-v2",
+    default_voice: "Mina",
+    default_format: "mp3",
+    default_language: "en"
   ]
 ```
 
@@ -177,7 +189,7 @@ The primary function for generating speech audio.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `provider` | atom | Yes | `:openai`, `:elevenlabs`, or `:polly` |
+| `provider` | atom | Yes | `:openai`, `:elevenlabs`, `:polly`, or `:soniox` |
 | `text` | string | Yes | Text to synthesize |
 | `voice` | string | No | Voice identifier (provider-specific) |
 | `model` | string | No | Model identifier |
@@ -186,11 +198,74 @@ The primary function for generating speech audio.
 | `speed` | float | No | Speech speed multiplier (default: `1.0`) |
 | `pitch` | float | No | Pitch adjustment in semitones (default: `0.0`) |
 | `language` | string | No | Language code |
-| `api_key` | string | No | Override API key |
-| `provider_opts` | keyword | No | Provider-specific options |
+| `provider_opts` | keyword | No | Provider-specific options, merged into the provider params |
 | `retry_opts` | keyword | No | Retry configuration |
 
-**Example:**
+Credential overrides (all optional, all fall back to application config):
+
+| Parameter | Type | Used by | Description |
+|-----------|------|---------|-------------|
+| `api_key` | string | OpenAI, ElevenLabs, Soniox | Per-request API key |
+| `api_organization` | string | OpenAI | `OpenAI-Organization` header |
+| `access_key_id` | string | Polly | AWS access key id |
+| `secret_access_key` | string | Polly | AWS secret access key |
+| `session_token` | string | Polly | AWS session token for temporary credentials |
+| `region` | string | Polly | AWS region, e.g. `"eu-west-1"` |
+
+### Which parameters each provider actually uses
+
+The schema accepts every parameter for every provider, but a provider only
+sends what its API supports. **A parameter a provider does not use is silently
+ignored** — it does not raise and does not warn. Check this table before
+relying on one.
+
+| Parameter | OpenAI | ElevenLabs | Polly | Soniox |
+|-----------|:------:|:----------:|:-----:|:------:|
+| `text` | ✅ | ✅ | ✅ | ✅ |
+| `voice` | ✅ | ✅ | ✅ | ✅ |
+| `model` | ✅ | ✅ | ✅ (engine) | ✅ |
+| `format` | ✅ | ✅ | ✅ | ✅ |
+| `speed` | ✅ | ✅ | ❌ | ✅ (0.7–1.3) |
+| `language` | ❌ | ❌ | ❌ | ✅ (required) |
+| `sample_rate` | ❌ | ❌ | ❌ | ✅ |
+| `pitch` | ❌ | ❌ | ❌ | ❌ |
+
+Notes on the gaps:
+
+* **`pitch` is not implemented by any provider.** It is accepted and defaulted
+  by the schema but never reaches an API. Do not rely on it.
+* **`sample_rate` is only honored by Soniox.** `capabilities/0` reports a
+  `sample_rates` list for every provider, but that list describes what the
+  service produces, not a value you can currently select for OpenAI,
+  ElevenLabs, or Polly.
+* **`language` is only used by Soniox**, where it is required. The other
+  providers infer the language from the text or from the chosen voice.
+* **`speed` ranges differ.** Soniox rejects anything outside 0.7–1.3 during
+  `validate_params/1`; Polly ignores the parameter entirely.
+
+### Minimal request per provider
+
+The shortest call that works for each provider, assuming credentials are in
+application config:
+
+```elixir
+# OpenAI — voice and model fall back to config defaults
+HipcallTts.generate(provider: :openai, text: "Hello")
+
+# ElevenLabs — voice is a voice ID string
+HipcallTts.generate(provider: :elevenlabs, text: "Hello")
+
+# AWS Polly — note that voice and model must be compatible, see
+# "Voice-Model Compatibility" below
+HipcallTts.generate(provider: :polly, text: "Hello", voice: "Joanna")
+
+# Soniox — language is required by the API; omitting it falls back to
+# `default_language` from config
+HipcallTts.generate(provider: :soniox, text: "Merhaba", language: "tr")
+```
+
+A fully specified call looks the same for every provider:
+
 ```elixir
 {:ok, audio} = HipcallTts.generate(
   provider: :openai,
@@ -201,6 +276,31 @@ The primary function for generating speech audio.
   speed: 1.0
 )
 ```
+
+### Top-level parameters vs `provider_opts`
+
+`provider_opts` is merged into the provider params after the top-level ones, so
+it can both add provider-specific options and override top-level values:
+
+```elixir
+# Adds an option that has no top-level equivalent
+HipcallTts.generate(
+  provider: :elevenlabs,
+  text: "Hello",
+  provider_opts: [stability: 0.3, similarity_boost: 0.9]
+)
+
+# Overrides credentials for this request only
+HipcallTts.generate(
+  provider: :soniox,
+  text: "Merhaba",
+  language: "tr",
+  provider_opts: [api_key: "sk-..."]
+)
+```
+
+Prefer `provider_opts` for anything provider-specific; the top-level schema is
+intentionally not growing a key per provider feature.
 
 ### Return Values
 
@@ -218,6 +318,140 @@ The primary function for generating speech audio.
   status: 401,
   headers: [...]
 }}
+```
+
+### Working with the returned audio
+
+`generate/1` returns the raw bytes of the encoded audio file — the same bytes
+the provider's API sent back, with no wrapper:
+
+```elixir
+{:ok, audio} = HipcallTts.generate(provider: :soniox, text: "Merhaba", language: "tr")
+# => {:ok, <<73, 68, 51, 4, 0, 0, 0, 0, 0, 34, 84, 83, 83, 69, ...>>}
+```
+
+Those first three bytes are `"ID3"` — this is a complete, playable MP3 file
+already, tags and all. There is nothing to decode or convert.
+
+**The return value does not tell you which format it is.** It is bytes, not a
+struct, so the caller has to remember what it asked for in `:format`. Track it
+alongside the binary if it can vary at runtime.
+
+#### Writing to a file
+
+Give the file the extension matching the `:format` you requested — a `.mp3`
+name on FLAC bytes will confuse players and browsers:
+
+| `:format` | Extension | MIME type | Notes |
+|-----------|-----------|-----------|-------|
+| `"mp3"` | `.mp3` | `audio/mpeg` | Default |
+| `"wav"` | `.wav` | `audio/wav` | Soniox only |
+| `"opus"` | `.opus` | `audio/opus` | |
+| `"aac"` | `.aac` | `audio/aac` | |
+| `"flac"` | `.flac` | `audio/flac` | |
+| `"ogg_vorbis"` | `.ogg` | `audio/ogg` | Polly only |
+| `"pcm"` | `.pcm` | `application/octet-stream` | Headerless, see below |
+| `"ulaw_8000"` | `.ulaw` | `audio/basic` | ElevenLabs only, see caveat below |
+
+Two caveats that the format lists do not make obvious:
+
+* **Polly + `"pcm"` needs an explicit `sample_rate`.** The schema defaults
+  `:sample_rate` to `22050`, and Polly forwards it, but AWS only accepts 8000 or
+  16000 for PCM output — so the default combination fails with
+  `InvalidSampleRateException`. Pass `sample_rate: 16000` (or `8000`)
+  explicitly. The other Polly formats accept 22050 and work as-is.
+
+* **`"ulaw_8000"` is not accepted by `:format`.** ElevenLabs reports it in
+  `capabilities/1`, and the provider knows how to send it, but the schema's
+  `:format` enum does not include it, so `format: "ulaw_8000"` fails validation.
+  Reach it through `provider_opts` instead, which is merged after validation:
+
+  ```elixir
+  HipcallTts.generate(
+    provider: :elevenlabs,
+    text: "Hello",
+    provider_opts: [format: "ulaw_8000"]
+  )
+  ```
+
+```elixir
+def save(text, format) do
+  with {:ok, audio} <- HipcallTts.generate(
+         provider: :soniox,
+         text: text,
+         language: "tr",
+         format: format
+       ) do
+    path = "announcement.#{extension(format)}"
+    File.write!(path, audio)
+    {:ok, path}
+  end
+end
+
+defp extension("ogg_vorbis"), do: "ogg"
+defp extension("ulaw_8000"), do: "ulaw"
+defp extension(format), do: format
+```
+
+#### Raw PCM has no header
+
+`"pcm"` and `"ulaw_8000"` return raw samples with no container — no sample rate,
+no channel count, nothing a player can read. Writing them to a file produces
+something most players refuse to open. You have to supply those values yourself:
+
+```bash
+# Soniox pcm defaults to 24 kHz, 16-bit, mono
+ffplay -f s16le -ar 24000 -ac 1 announcement.pcm
+```
+
+Prefer `"wav"` over `"pcm"` when a file has to stand on its own — it is the same
+samples with a 44-byte header that makes them self-describing.
+
+#### Serving over HTTP
+
+In Phoenix or Plug, send the bytes with the matching content type:
+
+```elixir
+def announcement(conn, %{"text" => text}) do
+  case HipcallTts.generate(provider: :soniox, text: text, language: "tr") do
+    {:ok, audio} ->
+      conn
+      |> put_resp_content_type("audio/mpeg")
+      |> send_resp(200, audio)
+
+    {:error, error} ->
+      conn |> put_status(502) |> json(%{error: error.message})
+  end
+end
+```
+
+#### Embedding in JSON
+
+JSON cannot carry raw bytes, so Base64-encode when returning audio from a JSON
+API or storing it in a text column:
+
+```elixir
+{:ok, audio} = HipcallTts.generate(provider: :openai, text: "Hello")
+encoded = Base.encode64(audio)
+
+# and back
+{:ok, ^audio} = Base.decode64(encoded)
+```
+
+Note this inflates the payload by about a third.
+
+#### Checking what you got
+
+```bash
+file announcement.mp3
+# => Audio file with ID3 version 2.4.0, contains:
+#    - MPEG ADTS, layer III, v2, 128 kbps, 24 kHz, Monaural
+
+ffprobe -v error -show_entries format=duration \
+  -show_entries stream=codec_name,sample_rate,channels \
+  -of csv=p=0 announcement.mp3
+# => mp3,24000,1
+#    3.720000
 ```
 
 ---
@@ -462,6 +696,324 @@ ElevenLabs supports advanced voice settings via `provider_opts`:
 
 ---
 
+### Soniox
+
+Soniox provides a single unified multilingual model: every voice speaks every
+supported language while keeping the same speaker identity.
+
+**Endpoint:** `https://tts-rt.soniox.com/tts`
+
+#### Configuration
+
+```elixir
+config :hipcall_tts, :providers,
+  soniox: [
+    api_key: {:system, "SONIOX_API_KEY"},
+    default_model: "tts-rt-v2",
+    default_voice: "Mina",
+    default_format: "mp3",
+    # Soniox requires a language on every request; used when the caller omits it.
+    default_language: "en"
+  ]
+```
+
+#### Models
+
+| Model ID | Description | Notes |
+|----------|-------------|-------|
+| `tts-rt-v2` | Real-time multilingual model, 63 languages | Only model offered by this package |
+
+> `tts-rt-v1` was removed by Soniox on 2026-08-31 and is deliberately not exposed.
+
+#### Sample Voices
+
+70 built-in voices (40 male, 30 female). All of them accept all 63 languages.
+
+| Voice | Gender | Character |
+|-------|--------|-----------|
+| `Mina` | Female | Soft, thoughtful, steady pacing |
+| `Emma` | Female | Smooth, relaxed, subtle warmth |
+| `Daniel` | Male | Rich, steady, polished |
+| `Adrian` | Male | Deep, crisp articulation |
+| `Imogen` | Female | Clear British, professional |
+| `Arjun` | Male | Deep, natural Indian accent |
+
+Use `HipcallTts.voices(:soniox)` for the full catalog.
+
+#### The `:language` parameter
+
+Soniox rejects requests without a language, and expects a bare ISO code. The
+provider normalizes locale-style values, so all of these resolve to `"tr"`:
+
+```elixir
+language: "tr"      # passed through
+language: "tr-TR"   # normalized
+language: "tr_TR"   # normalized
+```
+
+An unsupported language fails validation before the request is sent:
+
+```elixir
+HipcallTts.generate(provider: :soniox, text: "Hello", language: "zz-ZZ")
+# => {:error, %{code: :error, message: "Invalid language: zz-ZZ", ...}}
+```
+
+When `:language` is omitted, `default_language` from config is used.
+
+#### Speed
+
+Soniox accepts `speed` between `0.7` and `1.3` — narrower than the general range
+documented on `HipcallTts.Schema`. Values outside it are rejected locally rather
+than producing an HTTP 400:
+
+```elixir
+HipcallTts.generate(provider: :soniox, text: "Hello", language: "en", speed: 2.0)
+# => {:error, %{message: "Speed must be between 0.7 and 1.3", ...}}
+```
+
+#### Audio formats
+
+Package format names are mapped onto Soniox `audio_format` values:
+
+| Package `:format` | Soniox `audio_format` | Sample rates (Hz) |
+|-------------------|-----------------------|-------------------|
+| `mp3` | `mp3` | 16000, **24000**, 32000, 44100, 48000 |
+| `wav` | `wav` | 8000, 16000, **24000**, 44100, 48000 |
+| `opus` | `opus` | 8000, 16000, **24000**, 48000 |
+| `aac` | `aac` | 16000, **24000**, 44100, 48000 |
+| `flac` | `flac` | 16000, **24000**, 44100, 48000 |
+| `pcm` | `pcm_s16le` | 8000, 16000, **24000**, 44100, 48000 |
+
+`ogg_vorbis` is not supported and fails validation.
+
+The schema defaults `:sample_rate` to `22050`, which Soniox accepts for no format
+at all. That exact value is treated as "not specified" and omitted so Soniox
+applies its own per-format default. A sample rate that the chosen format does not
+support is likewise omitted rather than causing a 400.
+
+#### Text length and the 2-minute cap
+
+Soniox caps generated audio at **2 minutes of duration**, not by character count,
+and audio past the cap is truncated silently. `max_text_length` is therefore a
+character budget chosen to stay under 120 seconds of speech — and how many
+characters that is depends on the script.
+
+Measured on `tts-rt-v2` (voice `Mina`, speed 1.0):
+
+| Script | Rate | 120s budget |
+|--------|------|-------------|
+| Latin/Cyrillic (`tr`, `en`) | ~15.7 chars/sec | ~1,880 chars |
+| Japanese (`ja`) | ~6.1 chars/sec | ~730 chars |
+| Chinese (`zh`) | ~4.1 chars/sec | ~490 chars |
+
+The default of **1,100** is sized for Latin/Cyrillic text with margin for the
+slowest supported speed. `capabilities/0` cannot see the request language, so
+deployments that synthesize CJK text must lower it:
+
+```elixir
+config :hipcall_tts, :soniox_max_text_length, 450
+```
+
+Longer text is split on sentence boundaries by `HipcallTts.TextSplitter` and the
+segments are concatenated.
+
+#### Capabilities
+
+| Feature | Value |
+|---------|-------|
+| Max Text Length | 1,100 characters (configurable) |
+| Formats | `mp3`, `wav`, `opus`, `aac`, `flac`, `pcm` |
+| Sample Rates | 8000, 16000, 24000, 32000, 44100, 48000 Hz |
+| Streaming | Not implemented (Soniox offers a WebSocket API) |
+
+#### Expressive delivery with audio tags
+
+Soniox reads bracketed English tags in the text as delivery instructions rather
+than speaking them. A tag applies to the words that follow it, and several can
+appear in one utterance:
+
+```elixir
+{:ok, audio} = HipcallTts.generate(
+  provider: :soniox,
+  text: "[warm] Merhaba. [calm] Talebiniz inceleniyor, lütfen bekleyiniz.",
+  voice: "Mina",
+  language: "tr"
+)
+```
+
+Available categories include emotion (`[happy]`, `[sad]`, `[excited]`,
+`[nervous]`, `[calm]`, …), tone and manner (`[warm]`, `[stern]`, `[serious]`,
+`[sincerely]`, `[reassuringly]`, `[dramatically]`, …) and non-lexical sounds
+(`[laughs]`, `[sighs]`, …). The list is not exhaustive and Soniox recommends
+testing a tag before relying on it.
+
+Two rules worth remembering:
+
+* **Tags are always written in English**, whatever the text language. `[sakin]`
+  will be spoken aloud; `[calm]` will not.
+* **Tags count toward `max_text_length`**, since they are part of `:text`.
+
+There is no separate parameter for this — nothing in the package needs to know
+about tags, they simply travel inside the text.
+
+#### Emphasis and pacing inside the text
+
+The same layer covers written emphasis, independent of the `:speed` parameter:
+
+| Written form | Effect |
+|--------------|--------|
+| `UPPERCASE` | Stronger emphasis on the word |
+| `*stress*` | Marked stress |
+| `sooo` | Elongated vowel |
+| `...` | Hesitation / pause |
+| `—` | Sharper break |
+| `?!` | Combined intonation |
+
+```elixir
+{:ok, audio} = HipcallTts.generate(
+  provider: :soniox,
+  text: "Talebiniz *onaylandı*. Teşekkür ederiz... iyi günler.",
+  language: "tr"
+)
+```
+
+Soniox's own guidance is to reach for a voice whose natural pacing already fits,
+then shape individual moments with tags and punctuation, and only use `:speed`
+when the delivery is globally too fast or slow.
+
+#### Speed
+
+Accepted range is `0.7` to `1.3`, narrower than the schema's general range.
+Anything outside it is rejected by `validate_params/1` before a request is sent:
+
+```elixir
+HipcallTts.generate(provider: :soniox, text: "Merhaba", language: "tr", speed: 0.9)
+
+HipcallTts.generate(provider: :soniox, text: "Merhaba", language: "tr", speed: 2.0)
+# => {:error, %{message: "Speed must be between 0.7 and 1.3", ...}}
+```
+
+#### Soniox-only options via `provider_opts`
+
+`reduce_silence` and `bitrate` are not part of `HipcallTts.Schema`, so they
+travel through `provider_opts`:
+
+```elixir
+{:ok, audio} = HipcallTts.generate(
+  provider: :soniox,
+  text: "Merhaba. Talebiniz inceleniyor.",
+  language: "tr",
+  format: "mp3",
+  provider_opts: [
+    reduce_silence: true,   # shorten the gaps between words and sentences
+    bitrate: 64_000         # lossy codecs only — see the table below
+  ]
+)
+```
+
+**`reduce_silence`** trims the pauses *between* words and sentences, which is
+different from `:speed` — the words themselves are spoken at the same rate.
+
+Its effect scales with how many pauses the text actually contains. Measured on
+`tts-rt-v2` with voice `Daniel`, three runs each:
+
+| Text | Off | On |
+|------|-----|-----|
+| `"Merhaba. Talebiniz alındı. İnceleniyor. Lütfen bekleyin. Teşekkürler."` | ~7.5s | ~5.0s (−33%) |
+| One long sentence | no measurable change | no measurable change |
+
+So it pays off for a run of short IVR prompts and does close to nothing for a
+single flowing sentence. Note also that generation is not deterministic — the
+same request varied by about 20% across runs here, so compare averages rather
+than single results.
+
+**`bitrate`** applies only to the lossy codecs. Sending it with `wav`, `flac` or
+`pcm` is rejected by Soniox with a 400, so the provider validates it up front:
+
+| `:format` | Accepted bitrates (bps) | Default |
+|-----------|-------------------------|---------|
+| `"mp3"` | 32000, 64000, 96000, 128000, 192000, 256000, 320000 | 128000 |
+| `"opus"` | 16000, 32000, 64000, 96000, 128000, 256000 | 64000 |
+| `"aac"` | 32000, 64000, 96000, 128000, 192000, 256000, 320000 | 128000 |
+| `"wav"`, `"flac"`, `"pcm"` | not applicable | — |
+
+```elixir
+HipcallTts.generate(
+  provider: :soniox,
+  text: "Merhaba",
+  language: "tr",
+  format: "wav",
+  provider_opts: [bitrate: 128_000]
+)
+# => {:error, %{message: "Bitrate is not supported for the wav format", ...}}
+```
+
+Dropping the bitrate is a straightforward way to shrink cached announcements —
+32 kbps mp3 is roughly a quarter the size of the 128 kbps default, and for
+speech played down a phone line the difference is largely inaudible.
+
+#### One voice across languages
+
+Because every voice speaks every language, the same speaker identity can carry a
+multilingual product without switching voices:
+
+```elixir
+for {lang, text} <- [
+      {"tr", "Talebiniz inceleniyor."},
+      {"en", "Your ticket is being reviewed."},
+      {"de", "Ihr Ticket wird geprüft."}
+    ] do
+  {:ok, audio} = HipcallTts.generate(
+    provider: :soniox,
+    text: text,
+    voice: "Mina",
+    language: lang
+  )
+
+  File.write!("status_#{lang}.mp3", audio)
+end
+```
+
+Soniox also handles more than one language inside a single utterance, so a
+foreign brand name or term in an otherwise Turkish sentence does not need to be
+split out.
+
+#### Features this package does not expose
+
+`GET /v1/tts-models` reports several capabilities that `tts-rt-v2` supports but
+that the package has no surface for:
+
+| Capability | Status |
+|------------|--------|
+| WebSocket streaming | Not implemented — `stream/1` returns an error |
+| Voice cloning (20s reference clip) | Not implemented |
+| Word timestamps | Not implemented |
+
+There is also **no pronunciation control** — no SSML, no `<phoneme>`, no custom
+lexicon. When Soniox mispronounces a name or brand, the only lever is respelling
+it phonetically in the text. (AWS Polly, by contrast, accepts SSML `<phoneme>`.)
+
+#### Rate limits
+
+Soniox applies 100 requests/minute and **3 concurrent requests** per account.
+Split segments are generated sequentially, so a single `generate/1` call stays
+within the concurrency limit, but parallel callers may not.
+
+#### Example
+
+```elixir
+{:ok, audio} = HipcallTts.generate(
+  provider: :soniox,
+  text: "Hipcall müşteri hizmetlerini aradınız.",
+  voice: "Mina",
+  model: "tts-rt-v2",
+  language: "tr-TR",
+  format: "mp3"
+)
+```
+
+---
+
 ## Introspection API
 
 HipcallTts provides functions to query provider capabilities at runtime.
@@ -470,7 +1022,7 @@ HipcallTts provides functions to query provider capabilities at runtime.
 
 ```elixir
 HipcallTts.providers()
-# => [:openai, :elevenlabs, :polly]
+# => [:openai, :elevenlabs, :polly, :soniox]
 ```
 
 ### Get Provider Models
@@ -787,6 +1339,35 @@ ssml_text = """
 )
 ```
 
+### Soniox with a locale-style language
+
+The `:language` code comes straight from whatever your caller already has, so
+locale strings do not need normalizing first:
+
+```elixir
+{:ok, audio} = HipcallTts.generate(
+  provider: :soniox,
+  text: "Hipcall müşteri hizmetlerini aradınız.",
+  voice: "Mina",
+  language: "tr-TR",   # normalized to "tr" before the request
+  format: "mp3"
+)
+```
+
+Picking a voice by gender, since every Soniox voice speaks every language:
+
+```elixir
+{:ok, voices} = HipcallTts.voices(:soniox)
+female = Enum.filter(voices, &(&1.gender == :female))
+
+{:ok, audio} = HipcallTts.generate(
+  provider: :soniox,
+  text: "Merhaba",
+  voice: hd(female).id,
+  language: "tr"
+)
+```
+
 ### With Custom Retry Configuration
 
 ```elixir
@@ -807,16 +1388,22 @@ ssml_text = """
 
 ## Provider Comparison Table
 
-| Feature | OpenAI | AWS Polly | ElevenLabs |
-|---------|--------|-----------|------------|
-| Max Text | 4,096 chars | 3,000 chars | 10,000-40,000 chars |
-| Voices | 6 | 9+ | Custom + Library |
-| Languages | 11 | 4 | 30+ |
-| SSML | No | Yes | No |
-| Neural Voices | Yes (HD) | Yes | Yes |
-| Voice Cloning | No | No | Yes |
-| Formats | mp3, opus, aac, flac | mp3, ogg, pcm | mp3, pcm, ulaw |
-| Auth | API Key | AWS SigV4 | API Key |
+Counts below come from `HipcallTts.models/1`, `voices/1`, `languages/1` and
+`capabilities/1`, so they stay in step with what the package actually exposes.
+
+| Feature | OpenAI | AWS Polly | ElevenLabs | Soniox |
+|---------|--------|-----------|------------|--------|
+| Max Text | 4,096 chars | 3,000 chars | 40,000 chars | 1,100 chars (2 min audio cap) |
+| Models | 2 | 2 (engines) | 2 | 1 |
+| Voices | 13 | 22 | 7 + custom | 70 |
+| Languages | 57 | 4 | 32 | 63 |
+| SSML | No | Yes | No | No |
+| Voice Cloning | No | No | Yes | Yes (not exposed) |
+| Formats | mp3, opus, aac, flac | mp3, ogg_vorbis, pcm | mp3, pcm, ulaw_8000 | mp3, wav, opus, aac, flac, pcm |
+| `language` used | No | No | No | **Yes (required)** |
+| `sample_rate` used | No | No | No | Yes |
+| `speed` used | Yes | Yes | No | Yes (0.7–1.3) |
+| Auth | API Key | AWS SigV4 | API Key | API Key |
 
 ---
 

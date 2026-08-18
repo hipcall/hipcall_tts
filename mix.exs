@@ -2,7 +2,7 @@ defmodule HipcallTts.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/hipcall/hipcall_tts"
-  @version "0.4.0"
+  @version "0.5.0"
 
   def project do
     [
@@ -39,7 +39,7 @@ defmodule HipcallTts.MixProject do
   end
 
   defp description do
-    "Multi-provider Text-to-Speech (TTS) client for Elixir (OpenAI, AWS Polly, ElevenLabs) with unified API, splitting, retries, and telemetry."
+    "Multi-provider Text-to-Speech (TTS) client for Elixir (OpenAI, AWS Polly, ElevenLabs, Soniox) with unified API, splitting, retries, and telemetry."
   end
 
   defp package do

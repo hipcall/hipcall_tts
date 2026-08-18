@@ -12,6 +12,7 @@ Multi-provider Text-to-Speech (TTS) client for Elixir with a unified API, automa
 | OpenAI | `:openai` | API Key |
 | Amazon Polly | `:polly` | AWS SigV4 |
 | ElevenLabs | `:elevenlabs` | API Key |
+| Soniox | `:soniox` | API Key |
 
 ## Installation
 
@@ -87,6 +88,29 @@ export ELEVENLABS_API_KEY="..."
 File.write!("elevenlabs.mp3", audio)
 ```
 
+### Soniox
+
+```bash
+export SONIOX_API_KEY="..."
+```
+
+```elixir
+{:ok, audio} =
+  HipcallTts.generate(
+    provider: :soniox,
+    text: "Merhaba dünya",
+    voice: "Mina",
+    model: "tts-rt-v2",
+    language: "tr",
+    format: "mp3"
+  )
+
+File.write!("soniox.mp3", audio)
+```
+
+Soniox requires a language on every request. Locale-style values are normalized
+automatically, so `"tr-TR"` and `"tr_TR"` both resolve to `"tr"`.
+
 ## Configuration
 
 Configure providers in `config/config.exs`:
@@ -117,6 +141,14 @@ config :hipcall_tts, :providers,
     # Optional:
     # region: {:system, "AWS_REGION"},
     # session_token: {:system, "AWS_SESSION_TOKEN"}
+  ],
+  soniox: [
+    api_key: {:system, "SONIOX_API_KEY"},
+    default_model: "tts-rt-v2",
+    default_voice: "Mina",
+    default_format: "mp3",
+    # Soniox requires a language on every request; used when the caller omits it.
+    default_language: "en"
   ]
 ```
 
@@ -126,7 +158,7 @@ The `{:system, "ENV_VAR"}` tuple reads from environment variables at runtime.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `provider` | atom | Yes | `:openai`, `:elevenlabs`, or `:polly` |
+| `provider` | atom | Yes | `:openai`, `:elevenlabs`, `:polly`, or `:soniox` |
 | `text` | string | Yes | Text to synthesize |
 | `voice` | string | No | Voice identifier (provider-specific) |
 | `model` | string | No | Model identifier |
@@ -136,6 +168,28 @@ The `{:system, "ENV_VAR"}` tuple reads from environment variables at runtime.
 | `language` | string | No | Language code |
 | `provider_opts` | keyword | No | Provider-specific options |
 | `retry_opts` | keyword | No | Retry configuration |
+
+### Parameter support by provider
+
+The schema accepts every parameter for every provider, but a provider only
+sends what its API supports. **A parameter a provider does not use is silently
+ignored.**
+
+| Parameter | OpenAI | ElevenLabs | Polly | Soniox |
+|-----------|:------:|:----------:|:-----:|:------:|
+| `text` | ✅ | ✅ | ✅ | ✅ |
+| `voice` | ✅ | ✅ | ✅ | ✅ |
+| `model` | ✅ | ✅ | ✅ (engine) | ✅ |
+| `format` | ✅ | ✅ | ✅ | ✅ |
+| `speed` | ✅ | ✅ | ❌ | ✅ (0.7–1.3) |
+| `language` | ❌ | ❌ | ❌ | ✅ (required) |
+| `sample_rate` | ❌ | ❌ | ❌ | ✅ |
+| `pitch` | ❌ | ❌ | ❌ | ❌ |
+
+`pitch` is accepted and defaulted by the schema but is not implemented by any
+provider. `sample_rate` and `language` currently only reach Soniox. See
+[DOCUMENTATION.md](DOCUMENTATION.md#which-parameters-each-provider-actually-uses)
+for the details and the minimal request per provider.
 
 ## Provider Details
 
@@ -193,6 +247,34 @@ The `{:system, "ENV_VAR"}` tuple reads from environment variables at runtime.
 )
 ```
 
+### Soniox
+
+**Models:** `tts-rt-v2`
+
+**Voices:** 70 built-in voices (40 male, 30 female) — `Mina`, `Daniel`, `Emma`,
+`Adrian`, `Nina`, … Every voice speaks every supported language.
+
+**Languages:** 63, selected per request via `:language`.
+
+**Formats:** `mp3`, `wav`, `opus`, `aac`, `flac`, `pcm` (mapped to `pcm_s16le`)
+
+**Speed:** `0.7`–`1.3` (narrower than the schema's general range; values outside
+it are rejected before the request is sent)
+
+**Max text:** 1,100 characters by default.
+
+Soniox caps generated audio at **2 minutes of duration**, not by character count,
+and truncates past the cap without an error. The default character budget is
+sized for Latin/Cyrillic scripts. CJK text packs far more speech into the same
+character count, so lower the threshold when synthesizing it:
+
+```elixir
+# ~15.7 chars/sec for tr/en, ~6.1 for ja, ~4.1 for zh (measured on tts-rt-v2)
+config :hipcall_tts, :soniox_max_text_length, 450
+```
+
+Longer text is split on sentence boundaries and the segments are concatenated.
+
 ## Introspection API
 
 Query provider capabilities at runtime:
@@ -200,7 +282,7 @@ Query provider capabilities at runtime:
 ```elixir
 # List all providers
 HipcallTts.providers()
-# => [:openai, :elevenlabs, :polly]
+# => [:openai, :elevenlabs, :polly, :soniox]
 
 # Get provider models
 {:ok, models} = HipcallTts.models(:openai)
@@ -310,13 +392,13 @@ end
 
 ## Provider Comparison
 
-| Feature | OpenAI | AWS Polly | ElevenLabs |
-|---------|--------|-----------|------------|
-| Max Text | 4,096 chars | 3,000 chars | 10,000-40,000 chars |
-| Voices | 6 | 9+ | Custom + Library |
-| Languages | 11 | 4 | 30+ |
-| SSML | No | Yes | No |
-| Voice Cloning | No | No | Yes |
+| Feature | OpenAI | AWS Polly | ElevenLabs | Soniox |
+|---------|--------|-----------|------------|--------|
+| Max Text | 4,096 chars | 3,000 chars | 10,000-40,000 chars | 1,100 chars (2 min audio cap) |
+| Voices | 13 | 9+ | Custom + Library | 70 |
+| Languages | 57 | 4 | 30+ | 63 |
+| SSML | No | Yes | No | No |
+| Voice Cloning | No | No | Yes | Yes (not exposed by this package) |
 
 ## Testing
 
